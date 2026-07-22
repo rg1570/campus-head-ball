@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#07141a">
+  <title>Campus Head Ball — Koç Arenası</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/upgrade.css">
+</head>
+<body>
+<main>
+  <section id="home" class="screen active">
+    <div class="home-bg"></div><div class="scan"></div>
+    <div class="hero">
+      <div class="kicker">ONLINE • 1V1 / 2V2 • ARCADE FUTBOL</div>
+      <h1>CAMPUS<br><em>HEAD BALL</em></h1>
+      <p>Sekiz karakter. İki takım. Tek top. Tek başına kariyer yap veya arkadaşlarınla kampüs derbisine çık.</p>
+    </div>
+    <div class="entry panel mode-entry">
+      <label>OYUNCU ADIN</label><input id="playerName" maxlength="18" placeholder="Adını yaz">
+      <div id="modeRoot" class="mode-root">
+        <button id="singleMenuBtn" class="mode-hero single"><small>KARİYER • CPU</small><b>TEK OYUNCULU</b><span>Hızlı maç, lig ve kupa →</span></button>
+        <button id="multiMenuBtn" class="mode-hero multi"><small>ÇEVRİM İÇİ</small><b>ÇOK OYUNCULU</b><span>Hızlı eşleş veya oda kur →</span></button>
+      </div>
+      <div id="singleMenu" class="mode-panel hidden">
+        <div class="mode-heading"><button class="menuBack">←</button><div><small>TEK OYUNCULU</small><b>Bir yol seç</b></div></div>
+        <div class="mode-cards">
+          <button id="quickSoloBtn"><b>HIZLI MAÇ</b><span>Tek maç • Anında başla</span></button>
+          <button id="seasonBtn"><b>KAMPÜS LİGİ</b><span>3–14 maç • Ayarlanabilir fikstür</span></button>
+          <button id="cupBtn"><b>KAMPÜS KUPASI</b><span>2–4 tur • Eleme turnuvası</span></button>
+        </div>
+        <div id="careerPreview" class="career-preview"></div>
+        <div class="career-reset-actions"><button id="resetSeasonBtn">LİGİ SIFIRLA</button><button id="resetCupBtn">KUPAYI SIFIRLA</button></div>
+      </div>
+      <div id="multiMenu" class="mode-panel hidden">
+        <div class="mode-heading"><button class="menuBack">←</button><div><small>ÇOK OYUNCULU</small><b>Arkadaşlarınla oyna</b></div></div>
+        <button id="quickOnlineBtn" class="primary">HIZLI EŞLEŞME <span>⚡</span></button>
+        <button id="createBtn" class="secondary-wide">ÖZEL ODA KUR <span>→</span></button>
+        <div class="or"><i></i>ODA KODU<i></i></div>
+        <div class="join"><input id="roomCode" maxlength="5" placeholder="SAHA KODU"><button id="joinBtn">KATIL</button></div>
+      </div>
+      <p id="homeError" class="error"></p>
+    </div>
+    <div class="home-fighters"><img src="/assets/fighter-5.png"><img src="/assets/fighter-1.png"><img src="/assets/fighter-3.png"><img src="/assets/fighter-7.png"><img src="/assets/fighter-8.png"><img src="/assets/fighter-2.png"><img src="/assets/fighter-4.png"><img src="/assets/fighter-6.png"></div>
+  </section>
+
+  <section id="lobby" class="screen">
+    <header><div class="logo">CAMPUS <b>HEAD BALL</b></div><div class="room">SAHA <strong id="shownCode">—</strong><button id="copyCode">KOPYALA</button><button id="quitLobby" class="quit-button">ÇIK</button></div></header>
+    <div class="lobby-title"><div id="competitionBadge" class="kicker">MAÇINI KUR</div><h2>Takımını ve kafanı seç.</h2><span id="playersOnline">● 1 OYUNCU BAĞLI</span><div id="careerStatus" class="career-status hidden"></div></div>
+    <section class="format-setup panel">
+      <div><b>MAÇ DÜZENİ</b><div id="formatOptions" class="format-options"></div></div>
+      <div><b>SAHA BOYUTU</b><div id="arenaSizeOptions" class="format-options"></div></div>
+      <small id="formatHint">Bu iki ayarı saha sahibi belirler.</small>
+    </section>
+    <div class="choice-title"><span>TAKIM KADROSU</span><small>Boş koltukları bilgisayar tamamlar</small></div>
+    <section id="teamDraft" class="team-draft"></section>
+    <div class="choice-title"><span>KARAKTER SEÇİMİ</span><small>Sekiz karakterden her biri yalnızca bir kez seçilebilir</small></div>
+    <div id="fighters" class="fighter-grid"></div>
+    <div class="choice-title"><span>RESMÎ MAÇ TOPU</span><small id="ballHint">Tüm maçlarda sabit ve dengeli</small></div>
+    <div id="balls" class="ball-grid"></div>
+    <div class="choice-title"><span>KOÇ ARENASI</span><small id="stageHint">Saha sahibinin seçimi</small></div>
+    <div id="stages" class="stage-grid"></div>
+    <section class="match-setup panel">
+      <div class="setup-head"><div><span class="kicker">ÖZEL MAÇ KURALLARI</span><h3>Maçın ritmini belirle</h3></div><small id="rulesHint">Saha sahibi düzenler</small></div>
+      <div class="rule-row"><b>MAÇ SÜRESİ</b><div id="durationOptions" class="rule-options"></div></div>
+      <div class="rule-row"><b>GOL SINIRI</b><div id="goalOptions" class="rule-options"></div></div>
+      <div id="ruleSummary" class="rule-summary">90 SANİYE • İLK 5 GOL • BERABERLİKTE ALTIN GOL</div>
+    </section>
+    <div class="lobby-bottom">
+      <div id="readyStatus" class="ready-status"></div>
+      <div class="lobby-actions"><button id="readyBtn" class="ready-btn" disabled>ÖNCE KARAKTER SEÇ</button><button id="startBtn" class="primary" disabled>OYUNCULAR BEKLENİYOR</button></div>
+      <small id="hostHint">Eksik rakibi bilgisayar tamamlar.</small>
+    </div>
+  </section>
+
+  <section id="game" class="screen game-screen">
+    <canvas id="arena" width="1280" height="720"></canvas>
+    <button id="quitMatch" class="quit-button game-quit">MAÇTAN ÇIK</button>
+    <button id="resetMatchCareer" class="quit-button game-career-reset hidden">KARİYERİ SIFIRLA</button>
+    <div class="hud">
+      <div class="hud-side p1"><div class="team-label">MAVİ TAKIM</div><div id="team0HudPlayers" class="team-hud-players"></div></div>
+      <div class="scoreboard"><b id="p1Score">0</b><div><small id="matchMode">NORMAL SÜRE</small><strong id="timer">90</strong></div><b id="p2Score">0</b></div>
+      <div class="hud-side p2"><div class="team-label">KIRMIZI TAKIM</div><div id="team1HudPlayers" class="team-hud-players"></div></div>
+    </div>
+    <div id="announcement">BAŞLA!</div><div id="touchFeed"></div><div id="specialCallout"></div>
+    <div class="game-footer-hud">
+      <aside id="moveCard"><b>KARAKTER ÖZELLİĞİ</b><p id="moveText"></p></aside>
+      <div class="controls"><span><kbd>A/D</kbd> KOŞ</span><span><kbd>W</kbd> ZIPLA</span><span><kbd>S</kbd> EĞİL / HIZLI İN</span><span><kbd>SHIFT</kbd> DASH</span><span><kbd>J</kbd> KAFA VUR</span><span><kbd>K</kbd> ÖZEL</span></div>
+    </div>
+    <div id="versusIntro" class="versus-intro hidden">
+      <div class="intro-heading"><span class="kicker">KAMPÜS KARŞILAŞMASI</span><h2 id="matchupTitle">BÜYÜK DÜELLO</h2></div>
+      <div class="intro-fighters intro-teams">
+        <section id="introTeamBlue" class="intro-team intro-blue"></section>
+        <div class="versus-mark">VS</div>
+        <section id="introTeamRed" class="intro-team intro-red"></section>
+      </div>
+      <div id="introRules" class="intro-rules">90 SANİYE • İLK 5 GOL</div>
+      <button id="introSkip" class="intro-skip">TANITIMI ATLA</button><small id="introStatus">Maç 7 saniye içinde başlıyor</small>
+    </div>
+    <div id="endOverlay" class="overlay hidden"><div class="kicker">MAÇ TAMAMLANDI</div><h2 id="winnerText">MAESTRO KAZANDI</h2><p id="finalScore">5 — 2</p><div id="careerResult" class="career-result hidden"></div><div class="end-actions"><button id="backLobby" class="primary">KADROYA DÖN</button><button id="endQuit" class="quit-button">ANA MENÜYE ÇIK</button></div></div>
+  </section>
+  <div id="leagueOverlay" class="league-overlay hidden">
+    <section class="league-sheet panel"><div class="league-sheet-head"><div><span id="leagueFormat" class="kicker">TEK DEVRE • 8 TAKIM</span><h2>KAMPÜS LİGİ DURUMU</h2></div><div class="league-head-actions"><button id="resetLeagueOverlay" class="danger-small">LİGİ SIFIRLA</button><button id="closeLeague">KAPAT</button></div></div><div id="leagueFixture" class="league-fixture"></div><div id="leagueTable" class="league-table"></div></section>
+  </div>
+  <div id="careerSetupOverlay" class="league-overlay hidden">
+    <section class="career-setup-sheet panel">
+      <div class="league-sheet-head"><div><span id="careerSetupKicker" class="kicker">KAMPÜS LİGİ</span><h2 id="careerSetupTitle">Kariyerini kur</h2></div><button id="closeCareerSetup">KAPAT</button></div>
+      <div id="careerSetupFields" class="career-setup-fields"></div>
+      <div class="career-setup-fields"><div><b>CPU ZORLUĞU</b><div id="careerDifficultyOptions" class="career-options"></div></div></div>
+      <div id="careerSetupSummary" class="career-setup-summary"></div>
+      <button id="careerSetupStart" class="primary career-start">KARİYERİ BAŞLAT</button>
+    </section>
+  </div>
+</main>
+<div id="audioControls"><button id="audioToggle" title="Müziği aç veya kapat">♫ MÜZİK: AÇIK</button><label for="musicVolume">SES</label><input id="musicVolume" type="range" min="0" max="100" value="72" aria-label="Müzik ses seviyesi"><output id="musicVolumeValue" for="musicVolume">%72</output></div><div id="toast"></div>
+<div id="connectionStatus">BAĞLANTI YENİDEN KURULUYOR…</div>
+<script src="/socket.io/socket.io.js"></script><script src="/client.js"></script>
+</body>
+</html>

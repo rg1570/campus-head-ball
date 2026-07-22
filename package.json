@@ -1,0 +1,18 @@
+{
+  "name": "campus-head-ball",
+  "version": "5.6.2",
+  "private": true,
+  "description": "Sekiz karakterli, tek ve çok oyunculu modern kampüs kafa topu oyunu",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test/integration.js"
+  },
+  "engines": { "node": ">=20 <25" },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": { "socket.io-client": "^4.8.1" }
+}
