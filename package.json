@@ -1,8 +1,8 @@
 {
   "name": "campus-head-ball",
-  "version": "5.6.2",
+  "version": "5.7.0",
   "private": true,
-  "description": "Sekiz karakterli, tek ve çok oyunculu modern kampüs kafa topu oyunu",
+  "description": "On altı karakterli, tek ve çok oyunculu modern kampüs kafa topu oyunu",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

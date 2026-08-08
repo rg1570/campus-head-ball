@@ -2,6 +2,23 @@
 
 Bu işlem bir kez yapılır. Sonrasında arkadaşların yalnızca sana verilen internet adresine girer.
 
+## Var olan kafatopu.onrender.com oyununu güncelleme
+
+Render servisini yeniden kurmana gerek yoktur. GitHub'daki `rg1570/campus-head-ball` deposunun `main` dalı güncellendiğinde Render yeni sürümü otomatik yayımlar.
+
+1. Yeni oyun ZIP'ini indir ve çift tıklayarak aç.
+2. GitHub Desktop'ta `campus-head-ball` deposunu seç.
+3. **Repository → Show in Finder** ile GitHub'a bağlı mevcut klasörü aç.
+4. Yeni ZIP'ten çıkan `campus-head-ball` klasörünün **içindeki** bütün dosya ve klasörleri seçip GitHub'a bağlı mevcut klasörün içine kopyala.
+5. Finder aynı adlı dosyalar için sorarsa **Replace / Değiştir** seç. `node_modules` klasörünü kopyalama; zaten `.gitignore` tarafından dışarıda tutulur.
+6. GitHub Desktop'a dön. Solda değiştirilmiş ve yeni dosyalar görünür.
+7. Summary alanına örneğin `5.7.0 yeni karakterler ve kampüs haritaları` yaz.
+8. **Commit to main**, ardından üstteki **Push origin** düğmesine bas.
+9. Render Dashboard'da `kafatopu` servisini aç. **Events** veya **Logs** bölümünde yeni deploy'un başlamasını bekle.
+10. Durum yeniden **Live** olduğunda [https://kafatopu.onrender.com](https://kafatopu.onrender.com) adresini aç ve `Command + Shift + R` ile tam yenileme yap.
+
+Adres değişmez; yeni sürüm yine `https://kafatopu.onrender.com` üzerinden açılır. Eski açık maç ve odalar deploy sırasında sıfırlanabilir, bu yüzden güncellemeyi aktif maç yokken yapmak daha uygundur.
+
 ## 1. Dosyaları GitHub'a koy
 
 1. [github.com](https://github.com) adresinde ücretsiz hesap aç veya hesabına gir.

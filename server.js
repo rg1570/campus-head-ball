@@ -12,7 +12,7 @@ const io = new Server(server,socketOptions);
 app.set("trust proxy",1);
 app.disable("x-powered-by");
 app.use(express.static(path.join(__dirname,"public"),{setHeaders:(response,file)=>{if(file.includes(`${path.sep}assets${path.sep}`))response.setHeader("Cache-Control","public, max-age=86400");}}));
-app.get("/health", (_req, res) => res.json({ ok:true, game:"campus-head-ball", engine:"5.6.2" }));
+app.get("/health", (_req, res) => res.json({ ok:true, game:"campus-head-ball", engine:"5.7.0" }));
 
 const PORT = process.env.PORT || 3001;
 const FPS = 60;
@@ -29,7 +29,7 @@ const RIGHT_LINE = WORLD_WIDTH - 92;
 const PLAYER_LEFT = 185;
 const PLAYER_RIGHT = WORLD_WIDTH - 185;
 const SLOT_COUNT = 4;
-const STAGE_COUNT = 14;
+const STAGE_COUNT = 18;
 const teamOf = (slot) => slot < 2 ? 0 : 1;
 const ARENA_WIDTHS = {compact:1376,wide:1720};
 const activeSlots = (room) => room.format === "1v1" ? [0,2] : [0,1,2,3];
@@ -40,6 +40,7 @@ const HITBOX={headY:-190,headRadius:37,activeHeadRadius:48,torsoY:-129,torsoRadi
 const CROUCH_HITBOX={headY:-157,headRadius:37,torsoY:-105,torsoRadius:45,bodyY:-46,bodyRadius:43};
 const RULE_OPTIONS={durations:[60,90,120,180],goalLimits:[3,5,7,10]};
 const AI_DIFFICULTIES=["easy","normal","hard"];
+const SPECIAL_KINDS=["curve","burst","quake","rocket","magnet","counter","precision","lodos","curve","burst","lodos","quake","precision","rocket","magnet","counter"];
 const clamp = (value,min,max) => Math.max(min,Math.min(max,value));
 const approach = (value,target,amount) => value<target?Math.min(value+amount,target):Math.max(value-amount,target);
 
@@ -83,6 +84,46 @@ const ROSTER = [
     "Rumelifeneri'nin sert rüzgârında herkes topun peşinden koşarken İdiko onun nereye süzüleceğini öğrendi. Şimdi havadaki boşlukları pas koridoruna çevirmeye geliyor.",
     "İdiko bir kampüs finalinde en güçlü vuruşu denedi ve topu tribüne gönderdi. O günden beri kuvvet yerine ritmi seçiyor; topu yükseltip doğru anda düşürüyor.",
     "Rakipleri onun sakinliğini tereddüt sanıyor. Oysa İdiko top havaya çıktığında oyunun hızını değiştirir, savunmayı bekletir ve ikinci hamleyi takımına bırakır."
+  ]},
+  {name:"Teker",type:"Sekmeci",speed:305,accel:2520,jump:650,air:1.02,mass:1.03,power:1.02,special:"Çark Kafa",desc:"Dengeli ve kıvrak. Özel kafası topa keskin bir dönüş kazandırır.",stories:[
+    "Teker, kampüs koridorlarında her sekmeyi yeni bir açıya çevirerek çalıştı. Şimdi Çark Kafa ile savunmanın beklemediği köşeyi arıyor.",
+    "Dama desenli forması kadar oyunu da kolay okunmaz. Bir an merkezde görünür, sonraki anda topu ters yöne büker.",
+    "Teker için kötü seken top yoktur; yalnızca henüz yönü seçilmemiş bir fırsat vardır."
+  ]},
+  {name:"Ysoner",type:"Seri Pasör",speed:340,accel:2800,jump:630,air:1.12,mass:.90,power:.94,special:"Vites Kafa",desc:"Çabuk hızlanır ve boşluğu erken kapatır. Fiziksel mücadelede hafiftir.",stories:[
+    "Ysoner ilk adımını rakip düşünmeden atar. Vites Kafa başladığında saha bir anda ona küçük gelir.",
+    "Onun oyunu uzun hazırlıklara değil, doğru anda yapılan kısa ve keskin hızlanmalara dayanır.",
+    "Ysoner topu kovalamaz; topun birazdan geleceği boşluğa herkesten önce gider."
+  ]},
+  {name:"Ulushain",type:"Dalga Ustası",speed:310,accel:2500,jump:700,air:1.20,mass:.92,power:.96,special:"Dalga Kafa",desc:"Yüksek toplarda çevik. Özel kafası topu havada kısa süre yüzdürür.",stories:[
+    "Ulushain'in uzun bukleleri yükseldiğinde tribünler hava topunun ona ait olduğunu bilir.",
+    "Dalga Kafa topu aceleyle kaleye göndermez; önce savunmayı bekletir, sonra boşluğa bırakır.",
+    "Ulushain oyunun ritmini yerden değil havadan kurar ve ikinci hamleyi herkesten önce görür."
+  ]},
+  {name:"Kaynımol",type:"Bariyer",speed:265,accel:2100,jump:585,air:.85,mass:1.25,power:1.18,special:"Bariyer Kafa",desc:"Ağır ve sağlam. Yakındaki topu güçlü bir darbeyle tehlikeden uzaklaştırır.",stories:[
+    "Kaynımol çizgili gözlüğünün ardından oyunu sakin izler; top yaklaştığında bütün koridoru tek darbede kapatır.",
+    "Sarı-siyah zikzaklar rakip için bir uyarıdır: Bariyer Kafa'nın etki alanına giren top kolay dönmez.",
+    "Kaynımol hızlı görünmez, fakat doğru yerde durduğunda rakibin bütün hızını anlamsız bırakır."
+  ]},
+  {name:"Irene",type:"Keskin Nişancı",speed:300,accel:2450,jump:640,air:1,mass:1,power:.98,special:"İğne Kafa",desc:"Dengeli nişancı. Özel kafası uzak üst köşeye hesaplı bir rota çizer.",stories:[
+    "Irene antrenmanda aynı üst köşeyi yüzlerce kez hedefledi. Şimdi tek bir temiz temasın yeterli olduğuna inanıyor.",
+    "Rakip gücü beklerken Irene açıyı seçer; İğne Kafa kalabalığın arasından ince bir yol bulur.",
+    "Irene için kalenin büyüklüğü değil, savunmanın bıraktığı birkaç santimlik boşluk önemlidir."
+  ]},
+  {name:"Caner",type:"Akıncı",speed:330,accel:2700,jump:690,air:1.14,mass:.92,power:1,special:"Şimşek Kafa",desc:"Patlayıcı ve çevik. Özel hamlede yükselip topa sert bir açıyla saldırır.",stories:[
+    "Caner'in forması gibi oyunu da bir şimşek çizgisi izler: kısa, ani ve doğrudan kaleye.",
+    "Top yükseldiğinde Caner beklemez; Şimşek Kafa ile aynı anda hem mesafe hem irtifa kazanır.",
+    "Caner'in en tehlikeli anı durduğu an değildir, ilk adımını attığı andır."
+  ]},
+  {name:"Küçük Durak",type:"Çekim Ustası",speed:320,accel:2650,jump:645,air:1.12,mass:.90,power:.90,special:"Durak Kafa",desc:"Çevik oyun kurucu. Topu kısa süre kendi kafa koridoruna çeker.",stories:[
+    "Küçük Durak'ın adı durmayı söyler, oyunu ise sürekli hareket eder. Topu kendine çekip boşluğu bir anda açar.",
+    "Dört parçalı forması gibi sahayı da küçük bölgelere ayırır; Durak Kafa topu tam istediği bölgeye çağırır.",
+    "Rakip topun yönünü okuduğunu sanırken Küçük Durak oyunun merkezini çoktan değiştirmiş olur."
+  ]},
+  {name:"Nevşo",type:"Yankı Savunmacı",speed:290,accel:2300,jump:620,air:.96,mass:1.10,power:1.07,special:"Yankı Kafa",desc:"Sağlam kontra oyuncusu. Hızlı gelen topu daha sert biçimde geri yollar.",stories:[
+    "Nevşo rakibin en sert şutundan kaçmaz; o hızı Yankı Kafa ile sahibine geri gönderir.",
+    "Sakin bekleyişi pasiflik değildir. Nevşo rakibin acele ettiği anı kendi hücumunun başlangıcı yapar.",
+    "Nevşo'nun gücü top hızlandıkça büyür; doğru zamanda yaptığı tek karşılık bütün maçı çevirebilir."
   ]}
 ];
 const BALLS = [
@@ -139,6 +180,7 @@ io.on("connection",(socket)=>{
   socket.on("setFormat",({format}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);if(!room||room.phase!=="lobby"||room.hostId!==socket.id||room.competition==="onlineQuick")return reply({ok:false,error:"Bu modda maç düzeni değiştirilemez."});if(!["1v1","2v2"].includes(format))return reply({ok:false,error:"Geçersiz maç düzeni."});if(format==="1v1"&&room.members.size>2)return reply({ok:false,error:"Odada ikiden fazla kişi varken 1'e 1 seçilemez."});if(room.format===format)return reply({ok:true});room.format=format;if(format==="1v1"){const entries=[...room.members.entries()].sort(([a],[b])=>a===room.hostId?-1:b===room.hostId?1:0),saved=entries.map(([id,member])=>({id,member,character:room.selections[member.slot]}));room.controllers=[null,null,null,null];room.selections=[null,null,null,null];saved.forEach((item,index)=>{const slot=index===0?0:2;item.member.slot=slot;room.controllers[slot]=item.id;room.selections[slot]=item.character;const session=room.sessions.get(item.member.token);if(session)session.slot=slot;});}clearReady(room);emitLobby(room);reply({ok:true});});
   socket.on("setArenaSize",({arenaSize}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);if(!room||room.phase!=="lobby"||room.hostId!==socket.id)return reply({ok:false,error:"Saha boyutunu yalnızca saha sahibi değiştirebilir."});if(!ARENA_WIDTHS[arenaSize])return reply({ok:false,error:"Geçersiz saha boyutu."});room.arenaSize=arenaSize;room.worldWidth=ARENA_WIDTHS[arenaSize];clearReady(room);emitLobby(room);reply({ok:true});});
   socket.on("selectCharacter",({index}={},reply=()=>{})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id);index=Number(index);if(!room||room.phase!=="lobby"||!member||!Number.isInteger(index)||index<0||index>=ROSTER.length)return reply({ok:false});if(room.selections.some((selected,slot)=>slot!==member.slot&&selected===index))return reply({ok:false,error:"Bu karakter başka bir oyuncu tarafından seçildi."});room.selections[member.slot]=index;room.ready[member.slot]=false;emitLobby(room);reply({ok:true});});
+  socket.on("selectCpuCharacter",({slot,index}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);slot=Number(slot);const parsed=index===null||index===""?null:Number(index);if(!room||room.phase!=="lobby"||room.hostId!==socket.id)return reply({ok:false,error:"CPU karakterlerini yalnızca saha sahibi seçebilir."});if(!activeSlots(room).includes(slot)||room.controllers[slot])return reply({ok:false,error:"Bu koltuk CPU tarafından kullanılmıyor."});if(parsed!==null&&(!Number.isInteger(parsed)||parsed<0||parsed>=ROSTER.length))return reply({ok:false,error:"Geçersiz karakter."});if(parsed!==null&&room.selections.some((selected,otherSlot)=>otherSlot!==slot&&activeSlots(room).includes(otherSlot)&&selected===parsed))return reply({ok:false,error:"Bu karakter başka bir koltukta seçili."});room.selections[slot]=parsed;clearReady(room);emitLobby(room);reply({ok:true});});
   socket.on("selectStage",({index}={})=>{const room=rooms.get(socket.data.room);index=Number(index);if(room&&room.phase==="lobby"&&room.hostId===socket.id&&Number.isInteger(index)&&index>=0&&index<STAGE_COUNT){room.stage=index;clearReady(room);emitLobby(room);}});
   socket.on("setRules",({duration,goalLimit}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);duration=Number(duration);goalLimit=Number(goalLimit);if(!room||room.phase!=="lobby"||room.hostId!==socket.id)return reply({ok:false,error:"Maç kurallarını yalnızca saha sahibi değiştirebilir."});if(!RULE_OPTIONS.durations.includes(duration)||!RULE_OPTIONS.goalLimits.includes(goalLimit))return reply({ok:false,error:"Geçersiz maç kuralı."});room.rules={duration,goalLimit};clearReady(room);emitLobby(room);reply({ok:true});});
   socket.on("setReady",({ready}={},reply=()=>{})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id);if(!room||room.phase!=="lobby"||!member)return reply({ok:false});if(room.selections[member.slot]===null)return reply({ok:false,error:"Önce karakterini seç."});room.ready[member.slot]=!!ready;emitLobby(room);reply({ok:true});});
@@ -147,7 +189,7 @@ io.on("connection",(socket)=>{
     startMatch(room);reply({ok:true});
   });
   socket.on("skipIntro",()=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id);if(!room||room.phase!=="intro"||!member)return;room.introSkipped[member.slot]=true;if(humanSlots(room).every((slot)=>room.introSkipped[slot]))beginPlay(room);});
-  socket.on("returnLobby",()=>{const room=rooms.get(socket.data.room);if(room&&(room.hostId===socket.id||room.phase==="matchOver")){room.phase="lobby";room.winner=null;if(room.playMode==="single")room.stage=Math.floor(Math.random()*STAGE_COUNT);clearReady(room);room.controllers.forEach((controller,slot)=>{if(!controller)room.selections[slot]=null;});emitLobby(room);}});
+  socket.on("returnLobby",()=>{const room=rooms.get(socket.data.room);if(room&&(room.hostId===socket.id||room.phase==="matchOver")){room.phase="lobby";room.winner=null;if(room.playMode==="single")room.stage=Math.floor(Math.random()*STAGE_COUNT);clearReady(room);emitLobby(room);}});
   socket.on("input",(input={})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id);if(room&&member)room.inputs.set(socket.id,{left:!!input.left,right:!!input.right,jump:!!input.jump,down:!!input.down});});
   socket.on("action",({type}={})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id),player=room?.players.find((item)=>item.side===member?.slot);if(room&&player&&["header","special"].includes(type))startAction(room,player,type);});
   socket.on("dash",({direction}={})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id),player=room?.players.find((item)=>item.side===member?.slot);if(room&&player)startDash(room,player,Math.sign(Number(direction)||0));});
@@ -156,7 +198,7 @@ io.on("connection",(socket)=>{
 
 function createPlayer(side,character,width=WORLD_WIDTH){const stats=ROSTER[character],team=teamOf(side),role=side%2===0?"defender":"striker",wide=width>1500,positions=team===0?[wide?370:335,wide?625:500]:[width-(wide?370:335),width-(wide?625:500)];return{side,team,role,character,name:stats.name,x:positions[side%2],y:GROUND,vx:0,vy:0,facing:team?-1:1,moveIntent:0,onGround:true,crouching:false,energy:45,action:"idle",actionClock:0,actionDuration:0,actionHit:false,specialKind:null,dashTimer:0,dashCooldown:0,stun:0,carrySlow:0,jumpHeld:false,jumpBuffer:0,coyote:.1,landedId:0,aiCooldown:.2,goalCamp:0,goalCampLimit:2.45,goalZone:285,goalLock:0,pressureWarned:false};}
 function createBall(_type=0,x=CENTER){const type=0,stats=BALLS[type];return{type,x,y:215,vx:(Math.random()-.5)*50,vy:0,spin:0,radius:stats.radius,lastTouch:null,lastTouchKind:null,touchLock:0,trailId:0,groundChain:0,groundTouchTimer:0,lastGroundTouchSide:null,popOwner:null,popAssistTimer:0,groundPopCooldown:0,pinTimer:0,pinCooldown:0,pinRepeatWindow:0,pinBurstCount:0,scrumTimer:0,scrumTeam:null,scrumCooldown:0,stallTimer:0,stallAnchorX:x,stallCooldown:0,lowPlayTimer:0,lowPlayCooldown:0,unpinGrace:0,floatTimer:0};}
-function fillCpuSelections(room){const slots=activeSlots(room),used=new Set();for(let slot=0;slot<SLOT_COUNT;slot++)if(!slots.includes(slot))room.selections[slot]=null;slots.forEach((slot)=>{if(room.controllers[slot]&&room.selections[slot]!==null)used.add(room.selections[slot]);else if(!room.controllers[slot])room.selections[slot]=null;});for(const slot of slots)if(room.selections[slot]===null){const options=ROSTER.map((_,index)=>index).filter((index)=>!used.has(index)),choice=options[Math.floor(Math.random()*options.length)];room.selections[slot]=choice;used.add(choice);}}
+function fillCpuSelections(room){const slots=activeSlots(room),used=new Set();for(let slot=0;slot<SLOT_COUNT;slot++)if(!slots.includes(slot))room.selections[slot]=null;for(const slot of slots)if(room.selections[slot]!==null)used.add(room.selections[slot]);for(const slot of slots)if(room.selections[slot]===null){const options=ROSTER.map((_,index)=>index).filter((index)=>!used.has(index)),choice=options[Math.floor(Math.random()*options.length)];room.selections[slot]=choice;used.add(choice);}}
 function nextKickoffX(room){let side=Math.random()<.5?-1:1;if(side===room.lastKickoffSide&&room.kickoffStreak>=1&&Math.random()<.75)side*=-1;room.kickoffStreak=side===room.lastKickoffSide?room.kickoffStreak+1:1;room.lastKickoffSide=side;return room.worldWidth/2+side*(room.arenaSize==="wide"?70+Math.random()*110:55+Math.random()*80);}
 function matchupTitle(a,b){const key=[a,b].sort((x,y)=>x-y).join("-");return{"0-1":"AKIL İLE HIZIN DÜELLOSU","0-2":"PLAN, DUVARA KARŞI","0-3":"FALSO, GÖKYÜZÜNE KARŞI","1-2":"HIZ DUVARI AŞABİLİR Mİ?","1-3":"HAVA KORİDORU SAVAŞI","2-3":"GÜÇ İLE İRTİFANIN ÇARPIŞMASI"}[key]||"KAMPÜSÜN BÜYÜK DÜELLOSU";}
 function startMatch(room){fillCpuSelections(room);room.phase="intro";room.score=[0,0];room.timer=room.rules.duration;room.overtime=false;room.pause=0;room.kickoff=0;room.introRemaining=8;room.introSkipped=[false,false,false,false];room.winner=null;room.players=activeSlots(room).map((slot)=>createPlayer(slot,room.selections[slot],room.worldWidth));room.ball=createBall(room.ballType,nextKickoffX(room));room.storyIndices=room.selections.map((character)=>character===null?0:Math.floor(Math.random()*ROSTER[character].stories.length));room.introStories=room.selections.map((character,slot)=>character===null?"":ROSTER[character].stories[room.storyIndices[slot]]);const blue=room.players.filter((player)=>player.team===0).map((player)=>player.name).join(" & "),red=room.players.filter((player)=>player.team===1).map((player)=>player.name).join(" & ");room.matchupTitle=`${blue} — ${red}`;io.to(room.code).emit("matchStarted",publicState(room));emitLobby(room);}
@@ -167,9 +209,9 @@ function canAct(player){return player&&player.stun<=0&&player.actionClock<=0&&pl
 function startAction(room,player,type){
   if(room.phase!=="playing"||room.kickoff>0||!canAct(player))return false;const stats=ROSTER[player.character];
   if(type==="special"){
-    if(player.energy<50)return false;player.energy-=50;player.specialKind=["curve","burst","quake","rocket","magnet","counter","precision","lodos"][player.character];player.action="special";player.actionClock=player.character===2?.48:player.character===4?.52:.42;player.actionDuration=player.actionClock;player.actionHit=false;
-    if(player.character===1)player.vx=player.facing*690;if(player.character===3){player.vy=-760;player.vx=player.facing*410;player.onGround=false;}
-    if(player.character===2)quakeBall(room,player);io.to(room.code).emit("special",{side:player.side,kind:player.specialKind,name:stats.special});return true;
+    if(player.energy<50)return false;player.energy-=50;player.specialKind=SPECIAL_KINDS[player.character];player.action="special";player.actionClock=player.specialKind==="quake"?.48:player.specialKind==="magnet"?.52:.42;player.actionDuration=player.actionClock;player.actionHit=false;
+    if(player.specialKind==="burst")player.vx=player.facing*690;if(player.specialKind==="rocket"){player.vy=-760;player.vx=player.facing*410;player.onGround=false;}
+    if(player.specialKind==="quake")quakeBall(room,player);io.to(room.code).emit("special",{side:player.side,kind:player.specialKind,name:stats.special});return true;
   }
   player.specialKind=null;player.action="header";player.actionClock=.27;player.actionDuration=.27;player.actionHit=false;return true;
 }
@@ -315,6 +357,6 @@ function update(room){
 }
 function publicState(room){return{phase:room.phase,format:room.format,arenaSize:room.arenaSize,worldWidth:room.worldWidth,goalTop:goalTopFor(room),playMode:room.playMode,competition:room.competition,cpuDifficulty:room.cpuDifficulty,stage:room.stage,ballType:room.ballType,rules:room.rules,score:room.score,timer:room.timer,overtime:room.overtime,kickoff:room.kickoff,introRemaining:room.introRemaining,introSkipped:room.introSkipped,introStories:room.introStories,storyIndices:room.storyIndices,matchupTitle:room.matchupTitle,winner:room.winner,shake:room.shake,players:room.players.map((player)=>({...player,human:!!room.controllers[player.side],playerName:room.controllers[player.side]?room.members.get(room.controllers[player.side])?.name:"BİLGİSAYAR"})),ball:room.ball};}
 
-function run(){let tick=0;setInterval(()=>{tick++;const now=Date.now();for(const [code,room] of rooms){if(room.emptySince&&now-room.emptySince>300000){rooms.delete(code);continue;}update(room);if(["intro","playing","goalPause","matchOver"].includes(room.phase)&&tick%3===0)io.to(room.code).emit("state",publicState(room));}},1000/FPS);server.listen(PORT,"0.0.0.0",()=>console.log(`Campus Head Ball 5.6.2 http://localhost:${PORT} adresinde hazır.`));}
+function run(){let tick=0;setInterval(()=>{tick++;const now=Date.now();for(const [code,room] of rooms){if(room.emptySince&&now-room.emptySince>300000){rooms.delete(code);continue;}update(room);if(["intro","playing","goalPause","matchOver"].includes(room.phase)&&tick%3===0)io.to(room.code).emit("state",publicState(room));}},1000/FPS);server.listen(PORT,"0.0.0.0",()=>console.log(`Campus Head Ball 5.7.0 http://localhost:${PORT} adresinde hazır.`));}
 if(require.main===module)run();
 module.exports={BALLS,ROSTER,RULE_OPTIONS,AI_DIFFICULTIES,HITBOX,CROUCH_HITBOX,WORLD_WIDTH,ARENA_WIDTHS,STAGE_COUNT,GOAL_TOP,WIDE_GOAL_TOP,goalTopFor,LEFT_LINE,RIGHT_LINE,PLAYER_LEFT,PLAYER_RIGHT,activeSlots,nextKickoffX,createBall,createPlayer,aiInput,updatePlayer,updateBall,resolveTeamScrum,resolveBallPin,resolveCrowdStall,resolveLowPlayLoop,isTopShelfShot,collidePost,collideBallCircle,startAction,magnetBall};

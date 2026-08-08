@@ -1,6 +1,6 @@
-# Campus Head Ball 5.6.2 — Koç Arenası
+# Campus Head Ball 5.7.0 — Koç Arenası
 
-Sekiz özel karakteri kullanan, Koç Üniversitesi Rumelifeneri kampüsü ve yakın çevresinden esinlenen on dört haritalı modern kafa topu oyunudur. Tek Oyunculu bölümünde Hızlı Maç, ayarlanabilir Kampüs Ligi ve Kampüs Kupası; Çok Oyunculu bölümünde Hızlı Eşleşme ve özel oda bulunur. Tek ve çok oyunculu lobilerde 1'e 1 / 2'ye 2 düzeni ile saha boyutu bağımsız seçilir. Eksik oyuncuları CPU tamamlar; bağlantısı kesilen oyuncuyu geçici olarak devralır.
+On altı özel karakteri kullanan, Koç Üniversitesi Rumelifeneri kampüsü ve yakın çevresinden esinlenen on sekiz haritalı modern kafa topu oyunudur. Tek Oyunculu bölümünde Hızlı Maç, ayarlanabilir Kampüs Ligi ve Kampüs Kupası; Çok Oyunculu bölümünde Hızlı Eşleşme ve özel oda bulunur. Tek ve çok oyunculu lobilerde 1'e 1 / 2'ye 2 düzeni ile saha boyutu bağımsız seçilir. Eksik oyuncuları CPU tamamlar; saha sahibi her CPU koltuğunun karakterini seçebilir ve bağlantısı kesilen oyuncuyu CPU geçici olarak devralır.
 
 ## Oyun modları
 
@@ -57,7 +57,7 @@ Oyun ekranı tarayıcının gerçek görünüm yüksekliğine sabitlenir; 16:9 k
 
 - Çevrim içi odada maç düzenini, saha boyutunu ve diğer maç kurallarını yalnızca oda sahibi değiştirebilir; misafirler seçimleri canlı görür.
 - 1'e 1 düzeninde takımlarda birer, 2'ye 2 düzeninde ikişer aktif koltuk açılır. Oyuncular boş Mavi/Kırmızı takım koltuğuna geçebilir.
-- Sekiz karakter yalnızca birer kez seçilebilir. İnsan bulunmayan aktif koltukları benzersiz karakterlerle CPU doldurur.
+- On altı karakter yalnızca birer kez seçilebilir. İnsan bulunmayan aktif koltuklarda CPU karakterleri saha sahibi tarafından ayrı ayrı seçilebilir; seçim yapılmazsa oyun benzersiz karakterlerle rastgele tamamlar.
 - Karakter, arena, saha boyutu, maç düzeni veya kural değiştiğinde hazır durumu sıfırlanır. Tüm insan oyuncular hazır olmadan maç başlayamaz.
 - Her karakter için üç farklı Türkçe geçmiş hikâyesi bulunur. Maçtan önce sahadaki bütün karakterlerin yüzleri, oyuncu adları, oyun tarzları, özel güçleri ve rastgele seçilen hikâyeleri takım bazında gösterilir.
 - VS tanıtımı sekiz saniye sürer. Bütün insan oyuncular atlarsa maç hemen başlar. Fizik tanıtım süresince sunucuda dondurulur.
@@ -97,7 +97,7 @@ Oyun ekranı tarayıcının gerçek görünüm yüksekliğine sabitlenir; 16:9 k
 - Görüntü yatay olarak gerilmez: 1280 birimlik kamera topu yumuşak biçimde takip eder. Oyuncular ve top iki saha boyutunda da aynı görsel ölçeğini korur.
 - Her golden sonra top merkez çevresindeki kontrollü-rastgele bir sağ/sol koridora düşer. Sapma kompakt sahada daha dar, geniş sahada daha geniş tutulur; art arda aynı tarafın avantaj kazanma ihtimali sınırlandırılır.
 
-## On Koç arenası
+## On sekiz Koç arenası
 
 - Rumelifeneri Ana Avlu
 - Saat Kulesi — Yağmurlu Gece
@@ -109,8 +109,16 @@ Oyun ekranı tarayıcının gerçek görünüm yüksekliğine sabitlenir; 16:9 k
 - Öğrenci Merkezi Meydanı — Bahar
 - Yurtlar Orman Geçidi — Sonbahar
 - Açık Spor Sahası — Gece
+- Rumelifeneri Odeon — Altın Saat
+- Ana Giriş Bilgi Kapısı — Sonbahar
+- Koç Balık Terası — Gün Batımı
+- Batı Yurtları Baba’s — Yağmur Sonrası
+- Öğrenci Merkezi -1 — Stant Koridoru
+- Suna Kıraç Kütüphanesi — Gece İç Avlu
+- Mühendislik Merdivenleri — Gece
+- Şadırvan Salonu — Mavi Saat
 
-Yeni arenalar, Rumelifeneri kampüsünün merkezî kütüphanesi, avluları, Henry Ford çim alanı, Öğrenci Merkezi, yurt–orman geçitleri ve spor alanlarından esinlenen özgün sanatsal yorumlardır. On arena da aynı fizik koordinat sistemini kullanır; her biri 1'e 1 / 2'ye 2 ve kompakt / geniş saha seçimlerinin tamamında çalışır.
+Yeni arenalar, Rumelifeneri kampüsünün merkezî kütüphanesi, avluları, Henry Ford çim alanı, Öğrenci Merkezi, yurt–orman geçitleri, iç mekânları ve yakın çevresinden esinlenen özgün sanatsal yorumlardır. On sekiz arena da aynı fizik koordinat sistemini kullanır; her biri 1'e 1 / 2'ye 2 ve kompakt / geniş saha seçimlerinin tamamında çalışır.
 
 ## Görsel kafa ve temas hizası
 
@@ -149,7 +157,7 @@ Yeni arenalar, Rumelifeneri kampüsünün merkezî kütüphanesi, avluları, Hen
 npm test
 ```
 
-Test; tek/çok oyunculu oda ayrımını, hızlı eşleşmeyi, sekiz karakteri, on dört arenayı, tek resmî top fiziğini, sıkışma kurtarmasını, kafa vuruşunu, yeni özel güçleri, CPU devralmasını, dinamik lig/kupa fikstürlerini, CPU zorluklarını ve kariyer maçlarını denetler.
+Test; tek/çok oyunculu oda ayrımını, hızlı eşleşmeyi, on altı karakteri, on sekiz arenayı, seçilebilir CPU karakterlerini, tek resmî top fiziğini, sıkışma kurtarmasını, kafa vuruşunu, özel güçleri, CPU devralmasını, dinamik lig/kupa fikstürlerini, CPU zorluklarını ve kariyer maçlarını denetler.
 
 ### 5.3.1 oynanış ve ses güncellemesi
 
@@ -203,6 +211,14 @@ Test; tek/çok oyunculu oda ayrımını, hızlı eşleşmeyi, sekiz karakteri, o
 - Masaüstünde karakter özelliği ile tuş bilgileri tek sol-alt grup olarak yan yana konumlandırıldı.
 - Sağ alttaki müzik ve ses paneli yerinde bırakıldı; alt HUD'un sağ sınırında müzik paneline özel güvenli alan ayrıldı.
 - Orta genişlikteki ekranlarda kontrol grubu müzik panelinin üzerine gelmemesi için bir satır yukarı taşınır.
+
+### 5.7.0 yeni kadro, CPU seçimi ve iç mekân haritaları
+
+- **Teker, Ysoner, Ulushain, Kaynımol, Irene, Caner, Küçük Durak ve Nevşo** fotoğraf referanslarından mevcut büyük-kafa arcade stiline uyarlanarak eklendi. Kadro 16 karaktere çıktı.
+- Sekiz yeni formanın her biri renk kadar desenle de ayrıştırıldı: dama, dikey şerit, çapraz kuşak, zikzak, parçalı, şimşek, çeyrek ve yatay halka tasarımları kullanıldı.
+- Tek ve çok oyunculu lobilerde boş her CPU koltuğuna ayrı karakter seçilebilir. Aynı karakter aktif maç kadrosunda iki kez kullanılamaz; `Rastgele Karakter` seçeneği korunur.
+- Harita sayısı 18'e çıktı: **Öğrenci Merkezi -1 — Stant Koridoru**, **Suna Kıraç Kütüphanesi — Gece İç Avlu**, **Mühendislik Merdivenleri — Gece** ve **Şadırvan Salonu — Mavi Saat** eklendi.
+- Yeni iç mekânlar doğrulanmış Koç Üniversitesi kullanım bilgileri ve gerçek Koç kampüs fotoğrafları temel alınarak oyunun sinematik perspektifine uyarlandı.
 
 ## Farklı evlerden internet üzerinden oynama
 
