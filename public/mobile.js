@@ -61,7 +61,38 @@
   const specialBtn=document.getElementById('mobileSpecial');
   const fullscreenBtn=document.getElementById('browserFullscreen');
   let activePointer=null;
+  let jumpIntent=false,jumpSeenAirborne=false,jumpPulseTimer=null,jumpPulseTimeout=null,lastJumpPulse=0;
   const setKey=(code,value)=>{ if(typeof keys!=='undefined') keys[code]=value; };
+  function currentMobilePlayer(){
+    try{return typeof playerBySide==='function'&&typeof mySide!=='undefined'?playerBySide(mySide):null;}catch{return null;}
+  }
+  function stopJumpRepeat(){
+    jumpIntent=false;jumpSeenAirborne=false;
+    if(jumpPulseTimer){clearInterval(jumpPulseTimer);jumpPulseTimer=null;}
+    if(jumpPulseTimeout){clearTimeout(jumpPulseTimeout);jumpPulseTimeout=null;}
+    setKey('KeyW',false);
+  }
+  function jumpRepeatTick(){
+    if(!jumpIntent||platform!=='mobile'||!gameActive()){stopJumpRepeat();return;}
+    const player=currentMobilePlayer();
+    if(!player){setKey('KeyW',true);return;}
+    if(!player.onGround){jumpSeenAirborne=true;setKey('KeyW',true);return;}
+    const now=performance.now();
+    if(jumpSeenAirborne&&now-lastJumpPulse>120){
+      jumpSeenAirborne=false;lastJumpPulse=now;
+      // Sunucu zıplamayı yeni basış kenarında başlatıyor. Bu kısa bırakma yalnızca
+      // yere değildiğinde yapılır; havadaki zıplama yüksekliğini/fiziğini değiştirmez.
+      setKey('KeyW',false);
+      if(jumpPulseTimeout)clearTimeout(jumpPulseTimeout);
+      jumpPulseTimeout=setTimeout(()=>{if(jumpIntent&&platform==='mobile'&&gameActive())setKey('KeyW',true);},55);
+    }
+  }
+  function setJumpIntent(active){
+    if(!active){stopJumpRepeat();return;}
+    if(jumpIntent)return;
+    jumpIntent=true;jumpSeenAirborne=false;setKey('KeyW',true);
+    jumpPulseTimer=setInterval(jumpRepeatTick,33);
+  }
 
   // Analog interpretation constants. Horizontal movement intentionally has generous vertical tolerance.
   // Crouch has a narrower downward cone and a larger magnitude threshold to avoid accidental crouches.
@@ -77,7 +108,8 @@
 
   function resetJoystick(){
     activePointer=null;
-    ['KeyA','KeyD','KeyW','KeyS'].forEach(k=>setKey(k,false));
+    stopJumpRepeat();
+    ['KeyA','KeyD','KeyS'].forEach(k=>setKey(k,false));
     knob.style.transform='translate3d(0,0,0)';
     joystick.classList.remove('active');
   }
@@ -91,7 +123,7 @@
     knob.style.transform=`translate3d(${dx}px,${dy}px,0)`;
     const nx=dx/max,ny=dy/max;
     const intent=interpretJoystick(nx,ny,magnitude);
-    setKey('KeyA',intent.left);setKey('KeyD',intent.right);setKey('KeyW',intent.jump);setKey('KeyS',intent.down);
+    setKey('KeyA',intent.left);setKey('KeyD',intent.right);setJumpIntent(intent.jump);setKey('KeyS',intent.down);
   }
   joystick.addEventListener('pointerdown',event=>{
     if(platform!=='mobile'||!gameActive())return;

@@ -1,8 +1,8 @@
-CAMPUS HEAD BALL 5.8.2 — MOBİL UX TEST SONUÇLARI
+CAMPUS HEAD BALL 5.8.3 — MOBİL UX TEST SONUÇLARI
 
-Joystick yorumlama:
-1. Tam sağ -> PASS: sağa hareket
-2. Tam sol -> PASS: sola hareket
+Joystick yön/eşik regresyonu:
+1. Tam sağ -> PASS
+2. Tam sol -> PASS
 3. Hafif sağ-aşağı -> PASS: sağa hareket, eğilme yok
 4. Hafif sol-aşağı -> PASS: sola hareket, eğilme yok
 5. Belirgin aşağı -> PASS: eğilme
@@ -10,16 +10,20 @@ Joystick yorumlama:
 7. Sol-yukarı -> PASS: sol + zıplama
 8. Yukarı -> PASS: zıplama
 
-PWA/UX statik kontrolleri:
-9. iOS Safari normal sekme algısı -> PASS: iOS Safari + non-standalone koşulunda onboarding yolu mevcut
-10. Standalone algısı -> PASS: display-mode: standalone veya navigator.standalone yönlendirmeyi engelliyor
-11. Landscape safe-area -> PASS: joystick/J-K/HUD bölgelerinde safe-area kuralları korunuyor; MAÇTAN ÇIK mobilde aşağı taşındı
-12. Masaüstü regresyon -> PASS (kaynak izolasyonu): güncelleme yalnız mobile.js/mobile.css/manifest/sw + index PWA link/meta katmanını değiştiriyor; client.js/server.js/J-K/physics değiştirilmez
+Yeni sürekli zıplama:
+9. Joystick üst bölgede tutulurken havada KeyW kesilmiyor -> PASS
+10. Oyuncu yere indikten sonra yalnız yerde kısa bırak-yeniden bas kenarı üretiliyor -> PASS
+11. Böylece sunucunun mevcut jumpHeld/jumpPressed mantığı korunarak her inişte tekrar zıplama mümkün -> PASS
+12. Havada W bırakılmadığı için mevcut zıplama yüksekliği / kısa-zıplama fiziği değiştirilmedi -> PASS
 
-Ek kontroller:
+MAÇTAN ÇIK mobil yerleşimi:
+13. Mobilde top konumu iptal edildi (top:auto) -> PASS
+14. Alt safe-area bandına taşındı -> PASS
+15. min-width kaldırıldı, içerik kadar küçük kapsül -> PASS
+16. Joystick sağında konumlanıp joystick ile çakışmıyor -> PASS
+17. Masaüstü .game-quit kuralına dokunulmadı -> PASS
+
+PWA/standalone ve J/K: 5.8.2 davranışı aynen korunuyor.
 - mobile.js node --check PASS
 - manifest JSON parse PASS
-- kurulum betiği iki kez çalıştırıldı: duplicate PWA meta/link/script yok PASS
-- Fullscreen API destek kontrolü var; desteklenmeyen Safari/iOS'ta kontrol gizlenir/hata atmaz
-
-Not: Gerçek iPhone donanımında Safari/PWA görsel ergonomi testi kullanıcı cihazında yapılmalıdır; otomatik kontroller kaynak ve input mantığını doğrular.
+- service worker cache v3'e yükseltildi; eski mobile.js/mobile.css cache'i temizlenecek

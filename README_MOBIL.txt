@@ -1,9 +1,10 @@
-CAMPUS HEAD BALL 5.8.2 — MOBİL KONTROL + PWA UX
+CAMPUS HEAD BALL 5.8.3 — MOBİL KONTROL + PWA UX
 
-Bu paket 5.8.1'in tamamını içerir. Önceki mobil paketleri ayrıca kurman gerekmez.
+Bu paket 5.8.2'nin tamamını içerir. Önceki mobil paketleri ayrıca kurman gerekmez.
 
 YALNIZCA MOBİL UX DEĞİŞİKLİKLERİ
-- Mobil yatayda MAÇTAN ÇIK butonu aynı sol bölgede biraz aşağı taşındı.
+- Mobil yatayda MAÇTAN ÇIK butonu siyah kolon oluşturmadan sahanın alt-sol güvenli bölgesine küçültülerek taşındı.
+- Joystick yukarı / üst çaprazda tutulduğu sürece, oyuncu her yere inişinde mevcut zıplama fiziğiyle otomatik tekrar zıplar.
 - Joystick açı + magnitude mantığına geçirildi.
 - Sağ/sol hareket küçük dikey parmak sapmalarına toleranslıdır.
 - Sağ-yukarı = sağa doğru zıplama; sol-yukarı = sola doğru zıplama; yukarı = normal zıplama.
@@ -18,6 +19,6 @@ KURULUM
 1) GitHub Desktop > campus-head-ball > Repository > Show in Finder.
 2) Bu klasörün İÇİNDEKİ her şeyi repo köküne kopyala.
 3) MOBIL_GUNCELLE.command dosyasını çalıştır.
-4) GitHub Desktop Summary: 5.8.2 mobil joystick ve PWA UX
+4) GitHub Desktop Summary: 5.8.3 mobil sürekli zıplama ve çıkış butonu
 5) Commit to main > Push origin.
 6) Render Live olduktan sonra iPhone Safari'de siteyi yeniden aç.
