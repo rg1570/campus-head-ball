@@ -2,13 +2,19 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#07141a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kafa Topu">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <title>Campus Head Ball — Koç Arenası</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/upgrade.css">
+  <link rel="stylesheet" href="/mobile.css">
 </head>
 <body>
 <main>
@@ -117,6 +123,6 @@
 </main>
 <div id="audioControls"><button id="audioToggle" title="Müziği aç veya kapat">♫ MÜZİK: AÇIK</button><label for="musicVolume">SES</label><input id="musicVolume" type="range" min="0" max="100" value="72" aria-label="Müzik ses seviyesi"><output id="musicVolumeValue" for="musicVolume">%72</output></div><div id="toast"></div>
 <div id="connectionStatus">BAĞLANTI YENİDEN KURULUYOR…</div>
-<script src="/socket.io/socket.io.js"></script><script src="/client.js"></script>
+<script src="/socket.io/socket.io.js"></script><script src="/client.js"></script><script src="/mobile.js"></script>
 </body>
 </html>
