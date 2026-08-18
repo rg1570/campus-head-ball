@@ -47,11 +47,15 @@
   const pwaGuide=document.createElement('div');
   pwaGuide.id='pwaGuide';
   pwaGuide.innerHTML=`<section class="pwa-card" role="dialog" aria-modal="true" aria-labelledby="pwaGuideTitle">
-    <span class="platform-kicker">IPHONE • TAM EKRAN</span>
-    <h2 id="pwaGuideTitle">Kafa Topu'nu Tam Ekran Oyna</h2>
-    <p>En iyi oyun deneyimi için Kafa Topu'nu ana ekranına ekle. Bundan sonra oyun uygulama gibi ayrı pencerede açılır.</p>
-    <div class="pwa-path"><b>Paylaş</b><i>→</i><b>Ana Ekrana Ekle</b><i>→</i><b>Web Uygulaması Olarak Aç</b><i>→</i><b>Ekle</b></div>
-    <div class="pwa-actions"><button id="pwaUnderstood" type="button" class="pwa-primary">ANLADIM</button><button id="pwaLater" type="button" class="pwa-secondary">ŞİMDİ DEĞİL</button><button id="browserFullscreen" type="button" class="pwa-fullscreen hidden">⛶ TAM EKRAN</button></div>
+    <span class="platform-kicker">IPHONE • TAM EKRAN / FULL SCREEN</span>
+    <h2 id="pwaGuideTitle">Kafa Topu'nu Tam Ekran Oyna<br><span>Play Kafa Topu Full Screen</span></h2>
+    <div class="pwa-copy">
+      <p><b>TR</b> En iyi oyun deneyimi için Kafa Topu'nu ana ekranına ekle. Bundan sonra oyun uygulama gibi ayrı pencerede açılır.</p>
+      <p><b>EN</b> For the best experience, add Kafa Topu to your Home Screen. After that, the game opens in its own app-like window.</p>
+    </div>
+    <div class="pwa-path-block"><small>TÜRKÇE</small><div class="pwa-path"><b>Paylaş</b><i>→</i><b>Ana Ekrana Ekle</b><i>→</i><b>Web Uygulaması Olarak Aç</b><i>→</i><b>Ekle</b></div></div>
+    <div class="pwa-path-block"><small>ENGLISH</small><div class="pwa-path"><b>Share</b><i>→</i><b>Add to Home Screen</b><i>→</i><b>Open as Web App</b><i>→</i><b>Add</b></div></div>
+    <div class="pwa-actions"><button id="pwaUnderstood" type="button" class="pwa-primary">ANLADIM / GOT IT</button><button id="pwaLater" type="button" class="pwa-secondary">ŞİMDİ DEĞİL / NOT NOW</button><button id="browserFullscreen" type="button" class="pwa-fullscreen hidden">⛶ TAM EKRAN / FULL SCREEN</button></div>
   </section>`;
   document.body.appendChild(pwaGuide);
 
@@ -148,21 +152,17 @@
   }
   actionButton(headerBtn,'header');actionButton(specialBtn,'special');
 
+  // Normal iPhone Safari girişlerinde her sayfa yüklemesinde gösterilir.
+  // Kullanıcı Ana Ekran/PWA ikonundan standalone açtıysa kesinlikle gösterilmez.
+  // Kapatma tercihini localStorage'a yazmıyoruz; böylece sonraki browser girişinde yeniden görünür.
   function shouldShowPwaGuide(){
-    if(platform!=='mobile'||!isIOSSafari()||isStandalone())return false;
-    if(localStorage.getItem('kafatopu-pwa-understood')==='1')return false;
-    const later=Number(localStorage.getItem('kafatopu-pwa-later')||0);
-    return !later||Date.now()-later>3*24*60*60*1000;
+    return platform==='mobile'&&isIOSSafari()&&!isStandalone();
   }
   function showPwaGuide(){if(shouldShowPwaGuide())pwaGuide.classList.add('show');}
-  function closePwaGuide(mode){
-    if(mode==='understood')localStorage.setItem('kafatopu-pwa-understood','1');
-    if(mode==='later')localStorage.setItem('kafatopu-pwa-later',String(Date.now()));
-    pwaGuide.classList.remove('show');
-  }
-  document.getElementById('pwaUnderstood').addEventListener('click',()=>closePwaGuide('understood'));
-  document.getElementById('pwaLater').addEventListener('click',()=>closePwaGuide('later'));
-  pwaGuide.addEventListener('pointerdown',event=>{if(event.target===pwaGuide)closePwaGuide('later');});
+  function closePwaGuide(){pwaGuide.classList.remove('show');}
+  document.getElementById('pwaUnderstood').addEventListener('click',closePwaGuide);
+  document.getElementById('pwaLater').addEventListener('click',closePwaGuide);
+  pwaGuide.addEventListener('pointerdown',event=>{if(event.target===pwaGuide)closePwaGuide();});
 
   const fullscreenSupported=!!document.documentElement.requestFullscreen;
   fullscreenBtn.classList.toggle('hidden',!fullscreenSupported||isStandalone());

@@ -45,7 +45,7 @@ p.write_text(s,encoding='utf-8')
 PY
 node --check "$ROOT/public/mobile.js"
 python3 -m json.tool "$ROOT/public/manifest.webmanifest" >/dev/null
-printf '\nTAMAMLANDI — Mobil sürekli zıplama + küçük MAÇTAN ÇIK yerleşimi + iPhone PWA UX eklendi.\n'
+printf '\nTAMAMLANDI — Mobil kontroller + her browser girişinde TR/EN iPhone PWA yönlendirmesi eklendi.\n'
 printf 'Masaüstü kontrol/fizik/J-K/multiplayer koduna dokunulmadı.\n'
 printf 'Şimdi GitHub Desktop -> Commit to main -> Push origin yap.\n\n'
 read -n 1 -s -r -p "Kapatmak için bir tuşa bas..."

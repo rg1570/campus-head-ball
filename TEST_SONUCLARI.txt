@@ -27,3 +27,12 @@ PWA/standalone ve J/K: 5.8.2 davranışı aynen korunuyor.
 - mobile.js node --check PASS
 - manifest JSON parse PASS
 - service worker cache v3'e yükseltildi; eski mobile.js/mobile.css cache'i temizlenecek
+
+
+5.8.4 PWA ONBOARDING REGRESYON TESTİ
+- Normal iPhone Safari + Telefon: shouldShowPwaGuide = true
+- Standalone/PWA + Telefon: shouldShowPwaGuide = false
+- Browser kapanış tercihi localStorage'a yazılmıyor: doğrulandı
+- Türkçe kurulum yolu: mevcut
+- English install path: present
+- Önceki joystick/J/K/sürekli zıplama kodu: değişmedi

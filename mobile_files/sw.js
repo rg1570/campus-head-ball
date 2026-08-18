@@ -1,4 +1,4 @@
-const CACHE='campus-head-ball-shell-v3';
+const CACHE='campus-head-ball-shell-v4';
 const SHELL=['/','/styles.css','/upgrade.css','/mobile.css','/client.js','/mobile.js','/manifest.webmanifest'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
