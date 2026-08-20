@@ -100,7 +100,7 @@
 
   // Analog interpretation constants. Horizontal movement intentionally has generous vertical tolerance.
   // Crouch has a narrower downward cone and a larger magnitude threshold to avoid accidental crouches.
-  const JOY={dead:0.18,horizontal:0.23,jumpY:-0.38,jumpMagnitude:0.40,crouchY:0.72,crouchMagnitude:0.76,crouchDominance:1.45};
+  const JOY={dead:0.10,horizontal:0.16,jumpY:-0.38,jumpMagnitude:0.40,crouchY:0.80,crouchMagnitude:0.84,crouchDominance:1.55};
   function interpretJoystick(nx,ny,magnitude=Math.min(1,Math.hypot(nx,ny))){
     if(magnitude<JOY.dead)return{left:false,right:false,jump:false,down:false};
     const down=ny>=JOY.crouchY&&magnitude>=JOY.crouchMagnitude&&ny>=Math.abs(nx)*JOY.crouchDominance;
@@ -120,7 +120,7 @@
   function updateJoystick(clientX,clientY){
     const rect=joystick.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
     const rawX=clientX-cx,rawY=clientY-cy;
-    const max=rect.width*.31,rawLength=Math.hypot(rawX,rawY)||1;
+    const max=rect.width*.25,rawLength=Math.hypot(rawX,rawY)||1;
     const magnitude=Math.min(1,rawLength/max);
     let dx=rawX,dy=rawY;
     if(rawLength>max){dx=rawX/rawLength*max;dy=rawY/rawLength*max;}
@@ -164,6 +164,61 @@
   document.getElementById('pwaLater').addEventListener('click',closePwaGuide);
   pwaGuide.addEventListener('pointerdown',event=>{if(event.target===pwaGuide)closePwaGuide();});
 
+
+  // Single-player-only match controls. These only send authoritative requests to the
+  // server; multiplayer rooms never expose or accept them.
+  const soloControls=document.createElement('div');
+  soloControls.id='soloMatchControls';
+  soloControls.innerHTML=`<button id="soloPauseBtn" type="button">Ⅱ DURAKLAT</button><button id="soloRestartBtn" type="button">↻ YENİDEN BAŞLAT</button>`;
+  document.body.appendChild(soloControls);
+  const pauseBadge=document.createElement('div');
+  pauseBadge.id='soloPauseBadge';pauseBadge.innerHTML='<b>Ⅱ DURAKLATILDI</b><span>Devam etmek için DURAKLAT tuşuna bas.</span>';
+  document.body.appendChild(pauseBadge);
+  const endActions=document.querySelector('#endOverlay .end-actions');
+  const endRestartBtn=document.createElement('button');
+  endRestartBtn.id='soloEndRestartBtn';endRestartBtn.className='quit-button hidden';endRestartBtn.type='button';endRestartBtn.textContent='↻ MAÇI YENİDEN BAŞLAT';
+  endActions?.insertBefore(endRestartBtn,endActions.firstChild);
+  const pauseBtn=document.getElementById('soloPauseBtn'),restartBtn=document.getElementById('soloRestartBtn');
+  let careerRestartSnapshot=null;
+  const isSolo=()=>{try{return room?.playMode==='single'||state?.playMode==='single';}catch{return false;}};
+  const currentPhase=()=>{try{return state?.phase||room?.phase||'';}catch{return'';}};
+  function cloneCareer(){try{return activeCareer?JSON.parse(JSON.stringify(activeCareer)):null;}catch{return null;}}
+  function restoreCareerSnapshot(){
+    if(!careerRestartSnapshot)return;
+    try{activeCareer=JSON.parse(JSON.stringify(careerRestartSnapshot));if(typeof saveCareer==='function')saveCareer(activeCareer);}catch{}
+  }
+  function setPausedUI(paused){
+    pauseBtn.textContent=paused?'▶ DEVAM':'Ⅱ DURAKLAT';
+    pauseBtn.classList.toggle('active',!!paused);pauseBadge.classList.toggle('show',!!paused&&isSolo()&&gameActive());
+    if(paused&&platform==='mobile')resetJoystick();
+  }
+  function syncSoloControls(){
+    const solo=isSolo(),active=gameActive(),phase=currentPhase();
+    const live=solo&&active&&['playing','goalPause'].includes(phase);
+    soloControls.classList.toggle('show',live);
+    endRestartBtn.classList.toggle('hidden',!(solo&&active&&phase==='matchOver'));
+    if(!solo||!active)setPausedUI(false);
+  }
+  function restartSolo(fromEnd=false){
+    if(!isSolo())return;
+    if(!fromEnd&&!window.confirm('Maçı baştan başlatmak istiyor musun?'))return;
+    restoreCareerSnapshot();setPausedUI(false);resetJoystick();
+    socket.emit('restartSoloMatch',{},result=>{
+      if(!result?.ok){try{toast(result?.error||'Maç yeniden başlatılamadı.');}catch{}return;}
+      document.getElementById('endOverlay')?.classList.add('hidden');
+    });
+  }
+  pauseBtn.addEventListener('click',()=>{
+    if(!isSolo())return;
+    socket.emit('toggleSoloPause',{},result=>{if(result?.ok)setPausedUI(!!result.paused);});
+  });
+  restartBtn.addEventListener('click',()=>restartSolo(false));
+  endRestartBtn.addEventListener('click',()=>restartSolo(true));
+  socket.on('matchStarted',()=>{careerRestartSnapshot=cloneCareer();setPausedUI(false);setTimeout(syncSoloControls,0);});
+  socket.on('soloPause',payload=>setPausedUI(!!payload?.paused));
+  socket.on('soloRestarted',()=>{document.getElementById('endOverlay')?.classList.add('hidden');setPausedUI(false);setTimeout(syncSoloControls,0);});
+  socket.on('state',next=>{if(next?.playMode==='single'){setPausedUI(!!next.paused);setTimeout(syncSoloControls,0);}});
+
   const fullscreenSupported=!!document.documentElement.requestFullscreen;
   fullscreenBtn.classList.toggle('hidden',!fullscreenSupported||isStandalone());
   fullscreenBtn.addEventListener('click',async()=>{
@@ -180,6 +235,7 @@
     rotate.classList.toggle('show',platform==='mobile'&&active&&!wide);
     if(platform!=='mobile'||!active||!wide)resetJoystick();
     if(isStandalone())pwaGuide.classList.remove('show');
+    syncSoloControls();
   }
 
   continueBtn.addEventListener('click',()=>{
