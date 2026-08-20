@@ -1,38 +1,16 @@
-CAMPUS HEAD BALL 5.8.3 — MOBİL UX TEST SONUÇLARI
+5.8.5 TEST ÖZETİ
 
-Joystick yön/eşik regresyonu:
-1. Tam sağ -> PASS
-2. Tam sol -> PASS
-3. Hafif sağ-aşağı -> PASS: sağa hareket, eğilme yok
-4. Hafif sol-aşağı -> PASS: sola hareket, eğilme yok
-5. Belirgin aşağı -> PASS: eğilme
-6. Sağ-yukarı -> PASS: sağ + zıplama
-7. Sol-yukarı -> PASS: sol + zıplama
-8. Yukarı -> PASS: zıplama
+PASS — mobile.js JavaScript syntax kontrolü
+PASS — manifest JSON parse
+PASS — server_patch.py Python syntax
+PASS — server patch fixture: Node syntax
+PASS — server patch ikinci çalıştırmada duplicate handler oluşturmuyor
+PASS — joystick 8/8 yön senaryosu:
+  sağ, sol, hafif sağ-aşağı, hafif sol-aşağı, belirgin aşağı,
+  sağ-yukarı, sol-yukarı, yukarı
+PASS — single-player pause server guard mevcut
+PASS — multiplayer pause/restart server tarafından reddediliyor
+PASS — restart state score/timer/overtime/player/ball resetliyor
+PASS — masaüstü klavye/client.js değiştirilmiyor; mobil overlay scripti ayrı kalıyor
 
-Yeni sürekli zıplama:
-9. Joystick üst bölgede tutulurken havada KeyW kesilmiyor -> PASS
-10. Oyuncu yere indikten sonra yalnız yerde kısa bırak-yeniden bas kenarı üretiliyor -> PASS
-11. Böylece sunucunun mevcut jumpHeld/jumpPressed mantığı korunarak her inişte tekrar zıplama mümkün -> PASS
-12. Havada W bırakılmadığı için mevcut zıplama yüksekliği / kısa-zıplama fiziği değiştirilmedi -> PASS
-
-MAÇTAN ÇIK mobil yerleşimi:
-13. Mobilde top konumu iptal edildi (top:auto) -> PASS
-14. Alt safe-area bandına taşındı -> PASS
-15. min-width kaldırıldı, içerik kadar küçük kapsül -> PASS
-16. Joystick sağında konumlanıp joystick ile çakışmıyor -> PASS
-17. Masaüstü .game-quit kuralına dokunulmadı -> PASS
-
-PWA/standalone ve J/K: 5.8.2 davranışı aynen korunuyor.
-- mobile.js node --check PASS
-- manifest JSON parse PASS
-- service worker cache v3'e yükseltildi; eski mobile.js/mobile.css cache'i temizlenecek
-
-
-5.8.4 PWA ONBOARDING REGRESYON TESTİ
-- Normal iPhone Safari + Telefon: shouldShowPwaGuide = true
-- Standalone/PWA + Telefon: shouldShowPwaGuide = false
-- Browser kapanış tercihi localStorage'a yazılmıyor: doğrulandı
-- Türkçe kurulum yolu: mevcut
-- English install path: present
-- Önceki joystick/J/K/sürekli zıplama kodu: değişmedi
+Not: Gerçek iPhone ergonomisi fiziksel cihazda son kullanıcı testi gerektirir.

@@ -13,6 +13,7 @@ cp "$ROOT/mobile_files/mobile.js" "$ROOT/public/mobile.js"
 cp "$ROOT/mobile_files/mobile.css" "$ROOT/public/mobile.css"
 cp "$ROOT/mobile_files/manifest.webmanifest" "$ROOT/public/manifest.webmanifest"
 cp "$ROOT/mobile_files/sw.js" "$ROOT/public/sw.js"
+python3 "$ROOT/server_patch.py" "$ROOT/server.js"
 cp "$ROOT/mobile_files/icons/"*.png "$ROOT/public/icons/"
 python3 - "$ROOT/public/index.html" <<'PY'
 from pathlib import Path
@@ -45,7 +46,7 @@ p.write_text(s,encoding='utf-8')
 PY
 node --check "$ROOT/public/mobile.js"
 python3 -m json.tool "$ROOT/public/manifest.webmanifest" >/dev/null
-printf '\nTAMAMLANDI — Mobil kontroller + her browser girişinde TR/EN iPhone PWA yönlendirmesi eklendi.\n'
-printf 'Masaüstü kontrol/fizik/J-K/multiplayer koduna dokunulmadı.\n'
+printf '\nTAMAMLANDI — Daha hassas mobil joystick + single-player duraklat/yeniden başlat eklendi.\n'
+printf "Masaüstü klavye/J-K/fizik korunur; yeni duraklat/yeniden başlat kontrolleri yalnız single-player modunda çalışır.\n"
 printf 'Şimdi GitHub Desktop -> Commit to main -> Push origin yap.\n\n'
 read -n 1 -s -r -p "Kapatmak için bir tuşa bas..."

@@ -1,26 +1,24 @@
-CAMPUS HEAD BALL 5.8.4 — MOBİL KONTROL + ÇİFT DİLLİ PWA UX
+CAMPUS HEAD BALL — 5.8.5 MOBİL HASSASİYET + SINGLE-PLAYER MAÇ KONTROLLERİ
 
-Bu paket 5.8.3'ün tamamını içerir. Önceki mobil paketleri ayrıca kurman gerekmez.
+Bu paket 5.8.4'ün tüm mobil/PWA özelliklerini içerir. Önceki mobil paketleri ayrıca kurmak gerekmez.
 
-YALNIZCA MOBİL UX DEĞİŞİKLİKLERİ
-- Mobil yatayda MAÇTAN ÇIK butonu siyah kolon oluşturmadan sahanın alt-sol güvenli bölgesine küçültülerek taşındı.
-- Joystick yukarı / üst çaprazda tutulduğu sürece, oyuncu her yere inişinde mevcut zıplama fiziğiyle otomatik tekrar zıplar.
-- Joystick açı + magnitude mantığına geçirildi.
-- Sağ/sol hareket küçük dikey parmak sapmalarına toleranslıdır.
-- Sağ-yukarı = sağa doğru zıplama; sol-yukarı = sola doğru zıplama; yukarı = normal zıplama.
-- Eğilme dar bir aşağı konisi ve daha yüksek magnitude eşiği ister; hafif alt çaprazlar eğilme sayılmaz.
-- iPhone Safari normal sekmesinde, TELEFON seçildikten sonra PWA/Ana Ekrana Ekle yönlendirmesi HER YENİ SAYFA GİRİŞİNDE gösterilir.
-- Yönlendirme aynı kartta Türkçe ve İngilizce adımları birlikte gösterir.
-- Anladım / Şimdi Değil seçimi kalıcı olarak kaydedilmez; browser'dan sonraki girişte kart yeniden çıkar.
-- Standalone/Ana Ekran ikonundan açılışta PWA yönlendirmesi gösterilmez.
-- Fullscreen API varsa onboarding içinde yedek ⛶ TAM EKRAN seçeneği görünür; destek yoksa gizlidir.
-- Manifest adı Kafa Topu, display standalone, orientation landscape olarak doğrulanır.
-- Platform seçimi, masaüstü kontrolleri, J/K fonksiyonları ve cross-platform multiplayer aynen korunur.
+YENİLER
+1) Mobil joystick daha hassas:
+   - Görsel joystick alanı değişmez.
+   - Knob maksimum hareket yarıçapı %31'den %25'e indirildi.
+   - Yatay tetik eşiği 0.23'ten 0.16'ya, merkez dead-zone 0.18'den 0.10'a düşürüldü.
+   - Aşağı/eğilme hâlâ muhafazakâr: y>=0.80, magnitude>=0.84, dikey baskınlık>=1.55.
+2) Tek oyunculuda DURAKLAT / DEVAM:
+   - Sunucu fiziği ve sayaç gerçekten durur.
+   - Multiplayer'da görünmez ve sunucu komutu reddeder.
+3) Tek oyunculuda YENİDEN BAŞLAT:
+   - Maç sırasında, ÇIK butonunun yanında kompakt kontrol.
+   - Maç bittikten sonra sonuç menüsünde de bulunur.
+   - Lig/kupa maçı yeniden başlatılırsa maç öncesi kariyer snapshot'ı geri yüklenir; aynı sonuç iki kez işlenmez.
+4) Masaüstü klavye, J/K, fizik, top, skor, CPU ve multiplayer davranışı değiştirilmez.
 
 KURULUM
-1) GitHub Desktop > campus-head-ball > Repository > Show in Finder.
-2) Bu klasörün İÇİNDEKİ her şeyi repo köküne kopyala.
-3) MOBIL_GUNCELLE.command dosyasını çalıştır.
-4) GitHub Desktop Summary: 5.8.4 çift dilli PWA yönlendirmesi
-5) Commit to main > Push origin.
-6) Render Live olduktan sonra iPhone Safari'de siteyi yeniden aç.
+- ZIP'in içindeki tüm dosyaları GitHub Desktop'taki campus-head-ball repo köküne kopyala.
+- MOBIL_GUNCELLE.command dosyasını çalıştır.
+- GitHub Desktop: Commit to main -> Push origin.
+- Render Live olduktan sonra siteyi yenile.
