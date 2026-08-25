@@ -31,6 +31,7 @@
       <div id="modeRoot" class="mode-root">
         <button id="singleMenuBtn" class="mode-hero single"><small>KARİYER • CPU</small><b>TEK OYUNCULU</b><span>Hızlı maç, lig ve kupa →</span></button>
         <button id="multiMenuBtn" class="mode-hero multi"><small>ÇEVRİM İÇİ</small><b>ÇOK OYUNCULU</b><span>Hızlı eşleş veya oda kur →</span></button>
+        <button id="voiceLabBtn" class="voice-lab-entry"><span>◉</span><div><b>SES LABORATUVARI</b><small>Kendi sesini yerelde klonla ve metin üret</small></div><strong>→</strong></button>
       </div>
       <div id="singleMenu" class="mode-panel hidden">
         <div class="mode-heading"><button class="menuBack">←</button><div><small>TEK OYUNCULU</small><b>Bir yol seç</b></div></div>
@@ -54,6 +55,19 @@
     <div class="home-fighters"><img src="/assets/fighter-9.png"><img src="/assets/fighter-10.png"><img src="/assets/fighter-11.png"><img src="/assets/fighter-12.png"><img src="/assets/fighter-13.png"><img src="/assets/fighter-14.png"><img src="/assets/fighter-15.png"><img src="/assets/fighter-16.png"></div>
   </section>
 
+  <section id="voiceLab" class="screen voice-lab-screen">
+    <header><div class="logo">CAMPUS <b>VOICE LAB</b></div><button id="voiceBack" class="quit-button">ANA MENÜ</button></header>
+    <div class="voice-lab-wrap">
+      <div class="voice-lab-heading"><span class="kicker">YEREL • AÇIK KAYNAK • RIZA TEMELLİ</span><h2>Sesini kendi cihazında üret.</h2><p>Yalnızca sana ait veya kullanım iznin olan sesleri yükle. Kayıtlar sunucuda kalıcı saklanmaz; motoru senin makinen çalıştırır.</p></div>
+      <div class="voice-lab-grid">
+        <section class="voice-panel panel"><div class="voice-panel-head"><div><b>01 / REFERANS SES</b><small>Temiz, 6–30 saniyelik konuşma</small></div><span id="voiceDuration">HAZIR DEĞİL</span></div><div id="voiceDrop" class="voice-drop"><input id="voiceFile" type="file" accept="audio/*"><div class="voice-drop-icon">◉</div><b>Ses dosyasını bırak veya seç</b><small>WAV / MP3 / M4A / WEBM</small></div><div class="voice-record-row"><button id="voiceRecord" class="voice-record">● KAYDI BAŞLAT</button><audio id="voicePreview" controls class="voice-preview"></audio></div><label class="voice-label">REFERANS METNİ <span>İsteğe bağlı; F5-TTS için önerilir</span></label><textarea id="voiceReferenceText" rows="2" placeholder="Kayıtta söylediğin cümleyi buraya yaz…"></textarea></section>
+        <section class="voice-panel panel"><div class="voice-panel-head"><div><b>02 / MOTORU SEÇ</b><small>Donanımına göre kalite ve hız</small></div><span id="voiceEngineStatus">YÜKLENİYOR</span></div><div id="voiceEngines" class="voice-engines"></div><label class="voice-label">ÜRETİLECEK METİN</label><textarea id="voiceText" rows="6" placeholder="Merhaba, bu metin kendi sesimle üretildi."></textarea><label class="consent-line"><input id="voiceConsent" type="checkbox"> Bu sesin sahibi benim veya kullanım iznim var.</label><button id="voiceGenerate" class="primary voice-generate">SESİ ÜRET <span>↗</span></button></section>
+      </div>
+      <div id="voiceResult" class="voice-result panel hidden"><div><span class="kicker">ÜRETİM TAMAMLANDI</span><h3>Sesin hazır.</h3><small id="voiceResultMeta"></small></div><audio id="voiceResultAudio" controls></audio><a id="voiceDownload" class="primary voice-download" download="campus-voice.wav">WAV İNDİR</a></div>
+      <p class="voice-note">Motor kurulumu: <a href="/README_VOICE_CLONING.md" target="_blank">README_VOICE_CLONING.md</a> · Model lisansları ve yerel çalışma notları burada.</p>
+    </div>
+  </section>
+
   <section id="lobby" class="screen">
     <header><div class="logo">CAMPUS <b>HEAD BALL</b></div><div class="room">SAHA <strong id="shownCode">—</strong><button id="copyCode">KOPYALA</button><button id="quitLobby" class="quit-button">ÇIK</button></div></header>
     <div class="lobby-title"><div id="competitionBadge" class="kicker">MAÇINI KUR</div><h2>Takımını ve kafanı seç.</h2><span id="playersOnline">● 1 OYUNCU BAĞLI</span><div id="careerStatus" class="career-status hidden"></div></div>
@@ -64,7 +78,7 @@
     </section>
     <div class="choice-title"><span>TAKIM KADROSU</span><small>Boş koltuklarda bot karakterini saha sahibi seçebilir</small></div>
     <section id="teamDraft" class="team-draft"></section>
-    <div class="choice-title"><span>KARAKTER SEÇİMİ</span><small>On altı karakterden her biri yalnızca bir kez seçilebilir</small></div>
+    <div class="choice-title"><span>KARAKTER SEÇİMİ</span><small>On yedi karakterden her biri yalnızca bir kez seçilebilir</small></div>
     <div id="fighters" class="fighter-grid"></div>
     <div class="choice-title"><span>RESMÎ MAÇ TOPU</span><small id="ballHint">Tüm maçlarda sabit ve dengeli</small></div>
     <div id="balls" class="ball-grid"></div>
@@ -124,6 +138,6 @@
 </main>
 <div id="audioControls"><button id="audioToggle" title="Müziği aç veya kapat">♫ MÜZİK: AÇIK</button><label for="musicVolume">SES</label><input id="musicVolume" type="range" min="0" max="100" value="72" aria-label="Müzik ses seviyesi"><output id="musicVolumeValue" for="musicVolume">%72</output></div><div id="toast"></div>
 <div id="connectionStatus">BAĞLANTI YENİDEN KURULUYOR…</div>
-<script src="/socket.io/socket.io.js"></script><script src="/client.js"></script><script src="/mobile.js"></script>
+<script src="/runtime-config.js"></script><script src="/socket.io/socket.io.js"></script><script src="/client.js"></script><script src="/mobile.js"></script>
 </body>
 </html>

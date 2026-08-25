@@ -1,5 +1,9 @@
 const path = require("path");
 const crypto = require("crypto");
+const fs = require("fs");
+const os = require("os");
+const { spawn } = require("child_process");
+const { monitorEventLoopDelay, PerformanceObserver, performance } = require("perf_hooks");
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -9,12 +13,38 @@ const server = http.createServer(app);
 const socketOptions={pingInterval:20000,pingTimeout:20000,maxHttpBufferSize:1e5,connectionStateRecovery:{maxDisconnectionDuration:120000,skipMiddlewares:true}};
 if(process.env.APP_ORIGIN)socketOptions.cors={origin:process.env.APP_ORIGIN.split(",").map((origin)=>origin.trim()),methods:["GET","POST"]};
 const io = new Server(server,socketOptions);
+const telemetry=createTelemetry();
 app.set("trust proxy",1);
 app.disable("x-powered-by");
+app.use(express.json({limit:"28mb"}));
 app.use(express.static(path.join(__dirname,"public"),{setHeaders:(response,file)=>{if(file.includes(`${path.sep}assets${path.sep}`))response.setHeader("Cache-Control","public, max-age=86400");}}));
 app.get("/health", (_req, res) => res.json({ ok:true, game:"campus-head-ball", engine:"5.7.0" }));
+app.get("/runtime-config.js", (_req,res)=>{res.type("application/javascript").set("Cache-Control","no-store");let endpoints={};try{endpoints=JSON.parse(process.env.GAME_ENDPOINTS_JSON||"{}");}catch{}res.send(`window.__HEAD_BALL_ENDPOINTS__=Object.freeze(${JSON.stringify(endpoints)});`);});
+const voiceOutputDir=path.join(__dirname,"public","voice-output");
+fs.mkdirSync(voiceOutputDir,{recursive:true});
+app.get("/api/voice/engines",(_req,res)=>res.json({engines:[
+  {id:"xtts",name:"XTTS-v2",tag:"TÜRKÇE + 16 DİL",description:"Kısa referans klibiyle hızlı, çok dilli klonlama.",license:"Coqui Public Model License",ready:Boolean(process.env.VOICE_XTTS_READY||process.env.VOICE_TTS_COMMAND)},
+  {id:"f5",name:"F5-TTS",tag:"DOĞAL PROZODİ",description:"Akıcı uzun metinler ve güçlü ses benzerliği için önerilen motor.",license:"Code MIT / model CC-BY-NC",ready:Boolean(process.env.VOICE_F5_READY||process.env.VOICE_TTS_COMMAND)},
+  {id:"openvoice",name:"OpenVoice v2",tag:"MIT • HIZLI TON",description:"Hızlı ton rengi aktarımı; temel model dili sınırlıdır.",license:"MIT",ready:Boolean(process.env.VOICE_OPENVOICE_READY||process.env.VOICE_TTS_COMMAND)}
+],configured:Boolean(process.env.VOICE_TTS_COMMAND||process.env.VOICE_XTTS_READY||process.env.VOICE_F5_READY||process.env.VOICE_OPENVOICE_READY)}));
+app.post("/api/voice/generate",async(req,res)=>{
+  const {engine="xtts",text,referenceAudio,referenceMime="audio/wav",referenceText=""}=req.body||{};
+  if(typeof text!=="string"||text.trim().length<2)return res.status(400).json({ok:false,error:"Üretilecek metin en az iki karakter olmalı."});
+  if(typeof referenceAudio!=="string"||!referenceAudio.includes(","))return res.status(400).json({ok:false,error:"Önce kendi sesinden bir referans kaydı yükle veya kaydet."});
+  if(!process.env.VOICE_TTS_COMMAND)return res.status(503).json({ok:false,error:"Yerel motor henüz bağlanmadı. README_VOICE_CLONING.md içindeki GPU kurulumundan sonra VOICE_TTS_COMMAND değişkenini ayarla."});
+  const job=crypto.randomBytes(8).toString("hex"),dir=fs.mkdtempSync(path.join(os.tmpdir(),"campus-voice-")),ext=referenceMime.includes("webm")?"webm":"wav",ref=path.join(dir,`reference.${ext}`),out=path.join(voiceOutputDir,`${job}.wav`);
+  try{fs.writeFileSync(ref,Buffer.from(referenceAudio.split(",")[1],"base64"));
+    const command=process.env.VOICE_TTS_COMMAND.replaceAll("{reference_audio}",ref).replaceAll("{reference_text}",String(referenceText||"")).replaceAll("{text}",String(text)).replaceAll("{output}",out).replaceAll("{engine}",engine);
+    const child=spawn(command,{shell:true,env:{...process.env,VOICE_ENGINE:engine},stdio:["ignore","pipe","pipe"]});let logs="";child.stdout.on("data",b=>logs+=b);child.stderr.on("data",b=>logs+=b);
+    const code=await new Promise(resolve=>{child.on("close",resolve);child.on("error",()=>resolve(-1));});
+    if(code!==0||!fs.existsSync(out))throw new Error(logs.slice(-900)||"Motor ses üretmedi.");
+    res.json({ok:true,audioUrl:`/voice-output/${job}.wav`,engine,job});
+  }catch(error){try{fs.rmSync(dir,{recursive:true,force:true});}catch{};res.status(500).json({ok:false,error:`Ses üretimi başarısız: ${error.message}`});}
+});
+app.get("/metrics", (req,res)=>{const token=process.env.METRICS_TOKEN;if(!token||req.get("authorization")!==`Bearer ${token}`)return res.sendStatus(404);res.set("Cache-Control","no-store").json(telemetry.snapshot());});
 
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || "0.0.0.0";
 const FPS = 60;
 const DT = 1 / FPS;
 const GROUND = 610;
@@ -29,7 +59,8 @@ const RIGHT_LINE = WORLD_WIDTH - 92;
 const PLAYER_LEFT = 185;
 const PLAYER_RIGHT = WORLD_WIDTH - 185;
 const SLOT_COUNT = 4;
-const STAGE_COUNT = 18;
+// Her kampüs sahası gündüz, gün batımı ve gece ışığında oynanabilir.
+const STAGE_COUNT = 54;
 const teamOf = (slot) => slot < 2 ? 0 : 1;
 const ARENA_WIDTHS = {compact:1376,wide:1720};
 const activeSlots = (room) => room.format === "1v1" ? [0,2] : [0,1,2,3];
@@ -40,7 +71,7 @@ const HITBOX={headY:-190,headRadius:37,activeHeadRadius:48,torsoY:-129,torsoRadi
 const CROUCH_HITBOX={headY:-157,headRadius:37,torsoY:-105,torsoRadius:45,bodyY:-46,bodyRadius:43};
 const RULE_OPTIONS={durations:[60,90,120,180],goalLimits:[3,5,7,10]};
 const AI_DIFFICULTIES=["easy","normal","hard"];
-const SPECIAL_KINDS=["curve","burst","quake","rocket","magnet","counter","precision","lodos","curve","burst","lodos","quake","precision","rocket","magnet","counter"];
+const SPECIAL_KIND_BY_NAME={Alpsu:"curve",İhsan:"burst",Eaytaclar:"quake",Littlerose:"rocket",Jibiji:"magnet",UCY:"counter",Alto:"precision",İdiko:"lodos",Teker:"curve",Ysoner:"burst",Ulushain:"lodos",Kaynımol:"quake",Irene:"precision",Caner:"rocket","Küçük Durak":"magnet",Nevşo:"counter",Eco:"precision"};
 const clamp = (value,min,max) => Math.max(min,Math.min(max,value));
 const approach = (value,target,amount) => value<target?Math.min(value+amount,target):Math.max(value-amount,target);
 
@@ -126,10 +157,27 @@ const ROSTER = [
     "Nevşo'nun gücü top hızlandıkça büyür; doğru zamanda yaptığı tek karşılık bütün maçı çevirebilir."
   ]}
 ];
+ROSTER.push({name:"Eco",type:"Çevik Nişancı",speed:328,accel:2720,jump:680,air:1.14,mass:.92,power:.97,special:"Işık Kafa",desc:"Çevik ve isabetli. Özel kafası topu aydınlık bir çizgide uzak köşeye taşır.",stories:[
+  "Eco, rakip savunmanın en küçük boşluğunu bile fark eden keskin görüşüyle tanınır. Saha karardığında bile üst köşeyi bulmak için sakin kalır.",
+  "Antrenmanlarda aynı vuruşu tekrar etmek yerine her seferinde yeni bir açı arar. Işık Kafa onun doğru anda bulduğu o kısa koridordur.",
+  "Eco için hız yalnızca koşmak değildir; kararını rakipten önce verebilmektir. Top yükseldiğinde gözünü hedeften hiç ayırmaz."
+]});
+// Seçim ekranı ve maç kadrosu ad sırasını aynı biçimde kullanır.
+ROSTER.sort((a,b)=>a.name.localeCompare(b.name,"tr"));
 const BALLS = [
   {name:"Hafif Köpük",radius:37,gravity:920,bounce:.91,drag:.9987,mass:.8,max:1320,curve:.00024,color:"#55efff",accent:"#ffffff",desc:"Canlı seker, havada okunur kalır ve kontrolsüz hızlanmaz."}
 ];
 const rooms = new Map();
+
+function percentile(values,ratio){if(!values.length)return 0;const sorted=[...values].sort((a,b)=>a-b),index=Math.min(sorted.length-1,Math.max(0,Math.ceil(sorted.length*ratio)-1));return Number(sorted[index].toFixed(3));}
+function createTelemetry(){
+  const loop=monitorEventLoopDelay({resolution:20});loop.enable();
+  const stats={startedAt:Date.now(),ticks:0,tickOverruns:0,lateTicks:0,lateMs:0,tickMs:[],botAiMs:[],simulationMs:[],inboundMessages:0,inboundBytes:0,outboundMessages:0,outboundBytes:0,disconnects:0,reconnects:0,gcPausesMs:[],lastTickAt:performance.now(),lastCpu:process.cpuUsage(),lastCpuAt:performance.now()};
+  const push=(list,value)=>{list.push(value);if(list.length>4096)list.shift();};
+  const observer=new PerformanceObserver((entries)=>{for(const entry of entries.getEntries())push(stats.gcPausesMs,entry.duration);});observer.observe({entryTypes:["gc"]});
+  const payloadBytes=(args)=>{try{return Buffer.byteLength(JSON.stringify(args));}catch{return 0;}};
+  return {noteTick(totalMs,botAiMs,simulationMs){const now=performance.now(),elapsed=now-stats.lastTickAt;stats.lastTickAt=now;stats.ticks++;push(stats.tickMs,totalMs);push(stats.botAiMs,botAiMs);push(stats.simulationMs,simulationMs);if(totalMs>1000/FPS)stats.tickOverruns++;if(elapsed>(1000/FPS)*1.5){stats.lateTicks++;stats.lateMs+=elapsed-1000/FPS;}},noteInbound(args){stats.inboundMessages++;stats.inboundBytes+=payloadBytes(args);},noteOutbound(args){stats.outboundMessages++;stats.outboundBytes+=payloadBytes(args);},noteDisconnect(){stats.disconnects++;},noteReconnect(){stats.reconnects++;},snapshot(){const now=performance.now(),cpu=process.cpuUsage(),wall=Math.max(.001,now-stats.lastCpuAt),cpuMs=(cpu.user-stats.lastCpu.user+cpu.system-stats.lastCpu.system)/1000,cpuPercent=cpuMs/wall*100;stats.lastCpu=cpu;stats.lastCpuAt=now;const active=[...rooms.values()].filter((room)=>["intro","playing","goalPause"].includes(room.phase)),players=active.flatMap((room)=>room.players||[]),eventLoop={p50Ms:Number((loop.percentile(50)/1e6).toFixed(3)),p95Ms:Number((loop.percentile(95)/1e6).toFixed(3)),p99Ms:Number((loop.percentile(99)/1e6).toFixed(3)),maxMs:Number((loop.max/1e6).toFixed(3))};return {generatedAt:new Date().toISOString(),windowSeconds:Number(((Date.now()-stats.startedAt)/1000).toFixed(1)),process:{cpuPercent:Number(cpuPercent.toFixed(2)),rssBytes:process.memoryUsage().rss,heapUsedBytes:process.memoryUsage().heapUsed,heapTotalBytes:process.memoryUsage().heapTotal},tick:{configuredHz:FPS,budgetMs:Number((1000/FPS).toFixed(3)),actualHz:Number((stats.ticks/Math.max(.001,(Date.now()-stats.startedAt)/1000)).toFixed(2)),samples:stats.tickMs.length,p50Ms:percentile(stats.tickMs,.5),p95Ms:percentile(stats.tickMs,.95),p99Ms:percentile(stats.tickMs,.99),overruns:stats.tickOverruns,lateTicks:stats.lateTicks,lateMs:Number(stats.lateMs.toFixed(3))},simulation:{p50Ms:percentile(stats.simulationMs,.5),p95Ms:percentile(stats.simulationMs,.95),p99Ms:percentile(stats.simulationMs,.99),botAiP50Ms:percentile(stats.botAiMs,.5),botAiP95Ms:percentile(stats.botAiMs,.95),botAiP99Ms:percentile(stats.botAiMs,.99)},eventLoop,gc:{p50Ms:percentile(stats.gcPausesMs,.5),p95Ms:percentile(stats.gcPausesMs,.95),p99Ms:percentile(stats.gcPausesMs,.99)},connections:{socketClients:io.engine.clientsCount,activeRooms:active.length,humanPlayers:players.filter((player)=>!!active.find((room)=>room.players.includes(player))?.controllers[player.side]).length,activeBots:players.filter((player)=>!active.find((room)=>room.players.includes(player))?.controllers[player.side]).length,disconnects:stats.disconnects,reconnects:stats.reconnects},network:{inboundMessages:stats.inboundMessages,inboundBytes:stats.inboundBytes,outboundMessages:stats.outboundMessages,outboundBytes:stats.outboundBytes}};}};
+}
 
 function makeCode(){const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let code;do code=Array.from({length:5},()=>chars[Math.floor(Math.random()*chars.length)]).join("");while(rooms.has(code));return code;}
 function makeToken(){return crypto.randomBytes(18).toString("base64url");}
@@ -174,7 +222,7 @@ io.on("connection",(socket)=>{
   socket.on("resumeSession",({code,token}={},reply=()=>{})=>{
     const room=rooms.get(String(code||"").toUpperCase()),session=room?.sessions.get(String(token||""));if(!room||!session)return reply({ok:false,error:"Önceki saha artık açık değil."});
     const activeId=room.controllers[session.slot];if(activeId&&room.members.has(activeId)&&activeId!==socket.id)return reply({ok:false,error:"Bu oyuncu başka bir pencerede bağlı."});
-    leave(socket,true);const member={name:session.name,slot:session.slot,token:String(token)};room.members.set(socket.id,member);room.controllers[session.slot]=socket.id;room.inputs.set(socket.id,{});session.lastSeen=Date.now();room.emptySince=null;if(room.hostToken===token)room.hostId=socket.id;socket.join(room.code);socket.data.room=room.code;const current=["intro","playing","goalPause","matchOver"].includes(room.phase)&&room.players.length?publicState(room):null;reply({ok:true,room:lobby(room),state:current,sessionToken:String(token)});emitLobby(room);
+    leave(socket,true);const member={name:session.name,slot:session.slot,token:String(token)};room.members.set(socket.id,member);room.controllers[session.slot]=socket.id;room.inputs.set(socket.id,{});session.lastSeen=Date.now();room.emptySince=null;if(room.hostToken===token)room.hostId=socket.id;socket.join(room.code);socket.data.room=room.code;telemetry.noteReconnect();const current=["intro","playing","goalPause","matchOver"].includes(room.phase)&&room.players.length?publicState(room):null;reply({ok:true,room:lobby(room),state:current,sessionToken:String(token)});emitLobby(room);
   });
   socket.on("chooseSlot",({slot}={},reply=()=>{})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id);slot=Number(slot);if(!room||room.phase!=="lobby"||!member||!activeSlots(room).includes(slot))return reply({ok:false,error:"Bu koltuk seçili maç düzeninde kapalı."});if(room.controllers[slot]&&room.controllers[slot]!==socket.id)return reply({ok:false,error:"Bu koltuk dolu."});const old=member.slot;if(old===slot)return reply({ok:true});for(const [oldToken,session] of room.sessions)if(session.slot===slot&&oldToken!==member.token)room.sessions.delete(oldToken);const character=room.selections[old];room.controllers[old]=null;room.selections[old]=null;room.ready[old]=false;room.controllers[slot]=socket.id;room.selections[slot]=character;room.ready[slot]=false;member.slot=slot;const session=room.sessions.get(member.token);if(session)session.slot=slot;emitLobby(room);reply({ok:true});});
   socket.on("setFormat",({format}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);if(!room||room.phase!=="lobby"||room.hostId!==socket.id||room.competition==="onlineQuick")return reply({ok:false,error:"Bu modda maç düzeni değiştirilemez."});if(!["1v1","2v2"].includes(format))return reply({ok:false,error:"Geçersiz maç düzeni."});if(format==="1v1"&&room.members.size>2)return reply({ok:false,error:"Odada ikiden fazla kişi varken 1'e 1 seçilemez."});if(room.format===format)return reply({ok:true});room.format=format;if(format==="1v1"){const entries=[...room.members.entries()].sort(([a],[b])=>a===room.hostId?-1:b===room.hostId?1:0),saved=entries.map(([id,member])=>({id,member,character:room.selections[member.slot]}));room.controllers=[null,null,null,null];room.selections=[null,null,null,null];saved.forEach((item,index)=>{const slot=index===0?0:2;item.member.slot=slot;room.controllers[slot]=item.id;room.selections[slot]=item.character;const session=room.sessions.get(item.member.token);if(session)session.slot=slot;});}clearReady(room);emitLobby(room);reply({ok:true});});
@@ -195,7 +243,9 @@ io.on("connection",(socket)=>{
   socket.on("input",(input={})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id);if(room&&member)room.inputs.set(socket.id,{left:!!input.left,right:!!input.right,jump:!!input.jump,down:!!input.down});});
   socket.on("action",({type}={})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id),player=room?.players.find((item)=>item.side===member?.slot);if(room&&player&&["header","special"].includes(type))startAction(room,player,type);});
   socket.on("dash",({direction}={})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id),player=room?.players.find((item)=>item.side===member?.slot);if(room&&player)startDash(room,player,Math.sign(Number(direction)||0));});
-  socket.on("disconnect",()=>leave(socket));
+  socket.onAny((...args)=>telemetry.noteInbound(args));
+  socket.onAnyOutgoing((...args)=>telemetry.noteOutbound(args));
+  socket.on("disconnect",()=>{telemetry.noteDisconnect();leave(socket);});
 });
 
 function createPlayer(side,character,width=WORLD_WIDTH){const stats=ROSTER[character],team=teamOf(side),role=side%2===0?"defender":"striker",wide=width>1500,positions=team===0?[wide?370:335,wide?625:500]:[width-(wide?370:335),width-(wide?625:500)];return{side,team,role,character,name:stats.name,x:positions[side%2],y:GROUND,vx:0,vy:0,facing:team?-1:1,moveIntent:0,onGround:true,crouching:false,energy:45,action:"idle",actionClock:0,actionDuration:0,actionHit:false,specialKind:null,dashTimer:0,dashCooldown:0,stun:0,carrySlow:0,jumpHeld:false,jumpBuffer:0,coyote:.1,landedId:0,aiCooldown:.2,goalCamp:0,goalCampLimit:2.45,goalZone:285,goalLock:0,pressureWarned:false};}
@@ -211,7 +261,7 @@ function canAct(player){return player&&player.stun<=0&&player.actionClock<=0&&pl
 function startAction(room,player,type){
   if(room.userPaused||room.phase!=="playing"||room.kickoff>0||!canAct(player))return false;const stats=ROSTER[player.character];
   if(type==="special"){
-    if(player.energy<50)return false;player.energy-=50;player.specialKind=SPECIAL_KINDS[player.character];player.action="special";player.actionClock=player.specialKind==="quake"?.48:player.specialKind==="magnet"?.52:.42;player.actionDuration=player.actionClock;player.actionHit=false;
+    if(player.energy<50)return false;player.energy-=50;player.specialKind=SPECIAL_KIND_BY_NAME[ROSTER[player.character].name]||"curve";player.action="special";player.actionClock=player.specialKind==="quake"?.48:player.specialKind==="magnet"?.52:.42;player.actionDuration=player.actionClock;player.actionHit=false;
     if(player.specialKind==="burst")player.vx=player.facing*690;if(player.specialKind==="rocket"){player.vy=-760;player.vx=player.facing*410;player.onGround=false;}
     if(player.specialKind==="quake")quakeBall(room,player);io.to(room.code).emit("special",{side:player.side,kind:player.specialKind,name:stats.special});return true;
   }
@@ -356,10 +406,10 @@ function update(room){
   if(room.phase==="goalPause"){room.pause-=DT;if(room.pause<=0){if(room.winner!==null)finishMatch(room,room.winner);else resetKickoff(room);}return;}
   if(room.phase!=="playing")return;if(room.kickoff>0){room.kickoff=Math.max(0,room.kickoff-DT);return;}
   if(!room.overtime){room.timer=Math.max(0,room.timer-DT);if(room.timer===0){if(room.score[0]===room.score[1]){room.overtime=true;io.to(room.code).emit("overtime");}else{finishMatch(room,room.score[0]>room.score[1]?0:1);return;}}}
-  for(const player of room.players)updatePlayer(room,player,getInput(room,player));for(let a=0;a<room.players.length;a++)for(let b=a+1;b<room.players.length;b++)resolvePlayerOverlap(room.players[a],room.players[b]);resolveTeamScrum(room);updateBall(room);for(const player of room.players)player.facing=room.ball.x>=player.x?1:-1;room.shake=Math.max(0,room.shake-DT);
+  let botAiMs=0;for(const player of room.players){const aiStart=!room.controllers[player.side]?performance.now():0,input=getInput(room,player);if(aiStart)botAiMs+=performance.now()-aiStart;updatePlayer(room,player,input);}for(let a=0;a<room.players.length;a++)for(let b=a+1;b<room.players.length;b++)resolvePlayerOverlap(room.players[a],room.players[b]);resolveTeamScrum(room);updateBall(room);for(const player of room.players)player.facing=room.ball.x>=player.x?1:-1;room.shake=Math.max(0,room.shake-DT);return botAiMs;
 }
 function publicState(room){return{phase:room.phase,paused:!!room.userPaused,format:room.format,arenaSize:room.arenaSize,worldWidth:room.worldWidth,goalTop:goalTopFor(room),playMode:room.playMode,competition:room.competition,cpuDifficulty:room.cpuDifficulty,stage:room.stage,ballType:room.ballType,rules:room.rules,score:room.score,timer:room.timer,overtime:room.overtime,kickoff:room.kickoff,introRemaining:room.introRemaining,introSkipped:room.introSkipped,introStories:room.introStories,storyIndices:room.storyIndices,matchupTitle:room.matchupTitle,winner:room.winner,shake:room.shake,players:room.players.map((player)=>({...player,human:!!room.controllers[player.side],playerName:room.controllers[player.side]?room.members.get(room.controllers[player.side])?.name:"BİLGİSAYAR"})),ball:room.ball};}
 
-function run(){let tick=0;setInterval(()=>{tick++;const now=Date.now();for(const [code,room] of rooms){if(room.emptySince&&now-room.emptySince>300000){rooms.delete(code);continue;}update(room);if(["intro","playing","goalPause","matchOver"].includes(room.phase)&&tick%3===0)io.to(room.code).emit("state",publicState(room));}},1000/FPS);server.listen(PORT,"0.0.0.0",()=>console.log(`Campus Head Ball 5.7.0 http://localhost:${PORT} adresinde hazır.`));}
+function run(){let tick=0;setInterval(()=>{const tickStart=performance.now();tick++;const now=Date.now(),simulationStart=performance.now();let botAiMs=0;for(const [code,room] of rooms){if(room.emptySince&&now-room.emptySince>300000){rooms.delete(code);continue;}botAiMs+=update(room)||0;if(["intro","playing","goalPause","matchOver"].includes(room.phase)&&tick%3===0)io.to(room.code).emit("state",publicState(room));}telemetry.noteTick(performance.now()-tickStart,botAiMs,performance.now()-simulationStart);},1000/FPS);server.listen(PORT,HOST,()=>console.log(`Campus Head Ball 5.7.0 http://${HOST}:${PORT} adresinde hazır.`));}
 if(require.main===module)run();
 module.exports={BALLS,ROSTER,RULE_OPTIONS,AI_DIFFICULTIES,HITBOX,CROUCH_HITBOX,WORLD_WIDTH,ARENA_WIDTHS,STAGE_COUNT,GOAL_TOP,WIDE_GOAL_TOP,goalTopFor,LEFT_LINE,RIGHT_LINE,PLAYER_LEFT,PLAYER_RIGHT,activeSlots,nextKickoffX,createBall,createPlayer,aiInput,updatePlayer,updateBall,resolveTeamScrum,resolveBallPin,resolveCrowdStall,resolveLowPlayLoop,isTopShelfShot,collidePost,collideBallCircle,startAction,magnetBall};
