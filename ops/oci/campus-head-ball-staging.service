@@ -1,0 +1,21 @@
+[Unit]
+Description=Campus Head Ball Oracle staging server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kafatopu
+Group=kafatopu
+WorkingDirectory=/opt/campus-head-ball
+EnvironmentFile=/etc/campus-head-ball/staging.env
+ExecStart=/usr/bin/node /opt/campus-head-ball/server.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/opt/campus-head-ball
+
+[Install]
+WantedBy=multi-user.target
