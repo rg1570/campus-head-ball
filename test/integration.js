@@ -20,6 +20,7 @@ function validState(state,count){return state.players.length===count&&state.play
   assert.deepEqual(await health(),{ok:true,game:"campus-head-ball",engine:"5.7.0"});
   const clientSource=fs.readFileSync(path.join(__dirname,"../public/client.js"),"utf8"),stylesSource=fs.readFileSync(path.join(__dirname,"../public/styles.css"),"utf8"),upgradeSource=fs.readFileSync(path.join(__dirname,"../public/upgrade.css"),"utf8"),musicPath=path.join(__dirname,"../public/assets/stadium-theme.mp3"),fighterPaths=Array.from({length:17},(_,index)=>path.join(__dirname,`../public/assets/fighter-${index+1}.png`));
   const newStagePaths=[15,16,17,18].map((number)=>path.join(__dirname,`../public/assets/stage-${number}.png`));
+  const stageVariantPaths=Array.from({length:18},(_,index)=>index+1).flatMap((number)=>["day","sunset","night"].map((period)=>path.join(__dirname,`../public/assets/stage-${number}-${period}.png`)));
   assert(clientSource.includes('new Audio("/assets/stadium-theme.mp3")'));
   assert(!clientSource.includes("voiceLab")&&!clientSource.includes("voiceGenerate"));
   assert(!fs.readFileSync(path.join(__dirname,"../server.js"),"utf8").includes("/api/voice/"));
@@ -30,7 +31,8 @@ function validState(state,count){return state.players.length===count&&state.play
   assert(fs.statSync(musicPath).size>2000000);
   assert(fighterPaths.every((fighterPath)=>fs.statSync(fighterPath).size>500000));
   assert(newStagePaths.every((stagePath)=>fs.statSync(stagePath).size>1000000));
-  assert(clientSource.includes("Öğrenci Merkezi -1")&&clientSource.includes("Suna Kıraç Kütüphanesi İç Avlu")&&clientSource.includes("Mühendislik Merdivenleri")&&clientSource.includes("Şadırvan Salonu")&&clientSource.includes("Gün Batımı")&&clientSource.includes("Gündüz")&&clientSource.includes("Gece")&&clientSource.includes("stage-period-tabs")&&clientSource.includes("stage-period-grid"));
+  assert.equal(stageVariantPaths.length,54);assert(stageVariantPaths.every((stagePath)=>fs.statSync(stagePath).size>300000));
+  assert(clientSource.includes("Öğrenci Merkezi -1")&&clientSource.includes("Suna Kıraç Kütüphanesi İç Avlu")&&clientSource.includes("Mühendislik Merdivenleri")&&clientSource.includes("Şadırvan Salonu")&&clientSource.includes("Gün Batımı")&&clientSource.includes("Gündüz")&&clientSource.includes("Gece")&&clientSource.includes("stage-period-tabs")&&clientSource.includes("stage-period-grid")&&clientSource.includes("stageAsset(index)")&&!clientSource.includes("period.overlay"));
   assert(stylesSource.includes("#audioControls{position:fixed;z-index:30;right:14px;bottom:12px"));
   assert(upgradeSource.includes(".game-quit{position:absolute;z-index:8;bottom:12px"));
   assert(upgradeSource.includes("@media(min-width:1301px){.game-footer-hud{left:250px;right:360px;width:auto"));
