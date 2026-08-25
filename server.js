@@ -1,8 +1,5 @@
 const path = require("path");
 const crypto = require("crypto");
-const fs = require("fs");
-const os = require("os");
-const { spawn } = require("child_process");
 const { monitorEventLoopDelay, PerformanceObserver, performance } = require("perf_hooks");
 const express = require("express");
 const http = require("http");
@@ -16,31 +13,9 @@ const io = new Server(server,socketOptions);
 const telemetry=createTelemetry();
 app.set("trust proxy",1);
 app.disable("x-powered-by");
-app.use(express.json({limit:"28mb"}));
 app.use(express.static(path.join(__dirname,"public"),{setHeaders:(response,file)=>{if(file.includes(`${path.sep}assets${path.sep}`))response.setHeader("Cache-Control","public, max-age=86400");}}));
 app.get("/health", (_req, res) => res.json({ ok:true, game:"campus-head-ball", engine:"5.7.0" }));
 app.get("/runtime-config.js", (_req,res)=>{res.type("application/javascript").set("Cache-Control","no-store");let endpoints={};try{endpoints=JSON.parse(process.env.GAME_ENDPOINTS_JSON||"{}");}catch{}res.send(`window.__HEAD_BALL_ENDPOINTS__=Object.freeze(${JSON.stringify(endpoints)});`);});
-const voiceOutputDir=path.join(__dirname,"public","voice-output");
-fs.mkdirSync(voiceOutputDir,{recursive:true});
-app.get("/api/voice/engines",(_req,res)=>res.json({engines:[
-  {id:"xtts",name:"XTTS-v2",tag:"TÜRKÇE + 16 DİL",description:"Kısa referans klibiyle hızlı, çok dilli klonlama.",license:"Coqui Public Model License",ready:Boolean(process.env.VOICE_XTTS_READY||process.env.VOICE_TTS_COMMAND)},
-  {id:"f5",name:"F5-TTS",tag:"DOĞAL PROZODİ",description:"Akıcı uzun metinler ve güçlü ses benzerliği için önerilen motor.",license:"Code MIT / model CC-BY-NC",ready:Boolean(process.env.VOICE_F5_READY||process.env.VOICE_TTS_COMMAND)},
-  {id:"openvoice",name:"OpenVoice v2",tag:"MIT • HIZLI TON",description:"Hızlı ton rengi aktarımı; temel model dili sınırlıdır.",license:"MIT",ready:Boolean(process.env.VOICE_OPENVOICE_READY||process.env.VOICE_TTS_COMMAND)}
-],configured:Boolean(process.env.VOICE_TTS_COMMAND||process.env.VOICE_XTTS_READY||process.env.VOICE_F5_READY||process.env.VOICE_OPENVOICE_READY)}));
-app.post("/api/voice/generate",async(req,res)=>{
-  const {engine="xtts",text,referenceAudio,referenceMime="audio/wav",referenceText=""}=req.body||{};
-  if(typeof text!=="string"||text.trim().length<2)return res.status(400).json({ok:false,error:"Üretilecek metin en az iki karakter olmalı."});
-  if(typeof referenceAudio!=="string"||!referenceAudio.includes(","))return res.status(400).json({ok:false,error:"Önce kendi sesinden bir referans kaydı yükle veya kaydet."});
-  if(!process.env.VOICE_TTS_COMMAND)return res.status(503).json({ok:false,error:"Yerel motor henüz bağlanmadı. README_VOICE_CLONING.md içindeki GPU kurulumundan sonra VOICE_TTS_COMMAND değişkenini ayarla."});
-  const job=crypto.randomBytes(8).toString("hex"),dir=fs.mkdtempSync(path.join(os.tmpdir(),"campus-voice-")),ext=referenceMime.includes("webm")?"webm":"wav",ref=path.join(dir,`reference.${ext}`),out=path.join(voiceOutputDir,`${job}.wav`);
-  try{fs.writeFileSync(ref,Buffer.from(referenceAudio.split(",")[1],"base64"));
-    const command=process.env.VOICE_TTS_COMMAND.replaceAll("{reference_audio}",ref).replaceAll("{reference_text}",String(referenceText||"")).replaceAll("{text}",String(text)).replaceAll("{output}",out).replaceAll("{engine}",engine);
-    const child=spawn(command,{shell:true,env:{...process.env,VOICE_ENGINE:engine},stdio:["ignore","pipe","pipe"]});let logs="";child.stdout.on("data",b=>logs+=b);child.stderr.on("data",b=>logs+=b);
-    const code=await new Promise(resolve=>{child.on("close",resolve);child.on("error",()=>resolve(-1));});
-    if(code!==0||!fs.existsSync(out))throw new Error(logs.slice(-900)||"Motor ses üretmedi.");
-    res.json({ok:true,audioUrl:`/voice-output/${job}.wav`,engine,job});
-  }catch(error){try{fs.rmSync(dir,{recursive:true,force:true});}catch{};res.status(500).json({ok:false,error:`Ses üretimi başarısız: ${error.message}`});}
-});
 app.get("/metrics", (req,res)=>{const token=process.env.METRICS_TOKEN;if(!token||req.get("authorization")!==`Bearer ${token}`)return res.sendStatus(404);res.set("Cache-Control","no-store").json(telemetry.snapshot());});
 
 const PORT = process.env.PORT || 3001;
@@ -225,7 +200,7 @@ io.on("connection",(socket)=>{
     leave(socket,true);const member={name:session.name,slot:session.slot,token:String(token)};room.members.set(socket.id,member);room.controllers[session.slot]=socket.id;room.inputs.set(socket.id,{});session.lastSeen=Date.now();room.emptySince=null;if(room.hostToken===token)room.hostId=socket.id;socket.join(room.code);socket.data.room=room.code;telemetry.noteReconnect();const current=["intro","playing","goalPause","matchOver"].includes(room.phase)&&room.players.length?publicState(room):null;reply({ok:true,room:lobby(room),state:current,sessionToken:String(token)});emitLobby(room);
   });
   socket.on("chooseSlot",({slot}={},reply=()=>{})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id);slot=Number(slot);if(!room||room.phase!=="lobby"||!member||!activeSlots(room).includes(slot))return reply({ok:false,error:"Bu koltuk seçili maç düzeninde kapalı."});if(room.controllers[slot]&&room.controllers[slot]!==socket.id)return reply({ok:false,error:"Bu koltuk dolu."});const old=member.slot;if(old===slot)return reply({ok:true});for(const [oldToken,session] of room.sessions)if(session.slot===slot&&oldToken!==member.token)room.sessions.delete(oldToken);const character=room.selections[old];room.controllers[old]=null;room.selections[old]=null;room.ready[old]=false;room.controllers[slot]=socket.id;room.selections[slot]=character;room.ready[slot]=false;member.slot=slot;const session=room.sessions.get(member.token);if(session)session.slot=slot;emitLobby(room);reply({ok:true});});
-  socket.on("setFormat",({format}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);if(!room||room.phase!=="lobby"||room.hostId!==socket.id||room.competition==="onlineQuick")return reply({ok:false,error:"Bu modda maç düzeni değiştirilemez."});if(!["1v1","2v2"].includes(format))return reply({ok:false,error:"Geçersiz maç düzeni."});if(format==="1v1"&&room.members.size>2)return reply({ok:false,error:"Odada ikiden fazla kişi varken 1'e 1 seçilemez."});if(room.format===format)return reply({ok:true});room.format=format;if(format==="1v1"){const entries=[...room.members.entries()].sort(([a],[b])=>a===room.hostId?-1:b===room.hostId?1:0),saved=entries.map(([id,member])=>({id,member,character:room.selections[member.slot]}));room.controllers=[null,null,null,null];room.selections=[null,null,null,null];saved.forEach((item,index)=>{const slot=index===0?0:2;item.member.slot=slot;room.controllers[slot]=item.id;room.selections[slot]=item.character;const session=room.sessions.get(item.member.token);if(session)session.slot=slot;});}clearReady(room);emitLobby(room);reply({ok:true});});
+  socket.on("setFormat",({format}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);if(!room||room.phase!=="lobby"||room.hostId!==socket.id)return reply({ok:false,error:"Maç düzenini yalnızca saha sahibi değiştirebilir."});if(!["1v1","2v2"].includes(format))return reply({ok:false,error:"Geçersiz maç düzeni."});if(format==="1v1"&&room.members.size>2)return reply({ok:false,error:"Odada ikiden fazla kişi varken 1'e 1 seçilemez."});if(room.format===format)return reply({ok:true});room.format=format;if(format==="1v1"){const entries=[...room.members.entries()].sort(([a],[b])=>a===room.hostId?-1:b===room.hostId?1:0),saved=entries.map(([id,member])=>({id,member,character:room.selections[member.slot]}));room.controllers=[null,null,null,null];room.selections=[null,null,null,null];saved.forEach((item,index)=>{const slot=index===0?0:2;item.member.slot=slot;room.controllers[slot]=item.id;room.selections[slot]=item.character;const session=room.sessions.get(item.member.token);if(session)session.slot=slot;});}clearReady(room);emitLobby(room);reply({ok:true});});
   socket.on("setArenaSize",({arenaSize}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);if(!room||room.phase!=="lobby"||room.hostId!==socket.id)return reply({ok:false,error:"Saha boyutunu yalnızca saha sahibi değiştirebilir."});if(!ARENA_WIDTHS[arenaSize])return reply({ok:false,error:"Geçersiz saha boyutu."});room.arenaSize=arenaSize;room.worldWidth=ARENA_WIDTHS[arenaSize];clearReady(room);emitLobby(room);reply({ok:true});});
   socket.on("selectCharacter",({index}={},reply=()=>{})=>{const room=rooms.get(socket.data.room),member=room?.members.get(socket.id);index=Number(index);if(!room||room.phase!=="lobby"||!member||!Number.isInteger(index)||index<0||index>=ROSTER.length)return reply({ok:false});if(room.selections.some((selected,slot)=>slot!==member.slot&&selected===index))return reply({ok:false,error:"Bu karakter başka bir oyuncu tarafından seçildi."});room.selections[member.slot]=index;room.ready[member.slot]=false;emitLobby(room);reply({ok:true});});
   socket.on("selectCpuCharacter",({slot,index}={},reply=()=>{})=>{const room=rooms.get(socket.data.room);slot=Number(slot);const parsed=index===null||index===""?null:Number(index);if(!room||room.phase!=="lobby"||room.hostId!==socket.id)return reply({ok:false,error:"CPU karakterlerini yalnızca saha sahibi seçebilir."});if(!activeSlots(room).includes(slot)||room.controllers[slot])return reply({ok:false,error:"Bu koltuk CPU tarafından kullanılmıyor."});if(parsed!==null&&(!Number.isInteger(parsed)||parsed<0||parsed>=ROSTER.length))return reply({ok:false,error:"Geçersiz karakter."});if(parsed!==null&&room.selections.some((selected,otherSlot)=>otherSlot!==slot&&activeSlots(room).includes(otherSlot)&&selected===parsed))return reply({ok:false,error:"Bu karakter başka bir koltukta seçili."});room.selections[slot]=parsed;clearReady(room);emitLobby(room);reply({ok:true});});
