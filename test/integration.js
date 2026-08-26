@@ -32,7 +32,7 @@ function validState(state,count){return state.players.length===count&&state.play
   assert(fighterPaths.every((fighterPath)=>fs.statSync(fighterPath).size>500000));
   assert(newStagePaths.every((stagePath)=>fs.statSync(stagePath).size>1000000));
   assert.equal(stageVariantPaths.length,54);assert(stageVariantPaths.every((stagePath)=>fs.statSync(stagePath).size>300000));
-  assert(clientSource.includes("Öğrenci Merkezi -1")&&clientSource.includes("Suna Kıraç Kütüphanesi İç Avlu")&&clientSource.includes("Mühendislik Merdivenleri")&&clientSource.includes("Şadırvan Salonu")&&clientSource.includes("Gün Batımı")&&clientSource.includes("Gündüz")&&clientSource.includes("Gece")&&clientSource.includes("stage-period-tabs")&&clientSource.includes("stage-period-grid")&&clientSource.includes("stageAsset(index)")&&!clientSource.includes("period.overlay"));
+  assert(clientSource.includes("Öğrenci Merkezi -1")&&clientSource.includes("Suna Kıraç Kütüphanesi İç Avlu")&&clientSource.includes("Mühendislik Merdivenleri")&&clientSource.includes("Şadırvan Salonu")&&clientSource.includes("Gün Batımı")&&clientSource.includes("Gündüz")&&clientSource.includes("Gece")&&clientSource.includes("stage-period-tabs")&&clientSource.includes("stage-period-grid")&&clientSource.includes("stageAsset(index)")&&clientSource.includes("const baseIndex=stageBaseIndex(index),image=stageImgs[index]")&&!clientSource.includes("period.overlay"));
   assert(stylesSource.includes("#audioControls{position:fixed;z-index:30;right:14px;bottom:12px"));
   assert(upgradeSource.includes(".game-quit{position:absolute;z-index:8;bottom:12px"));
   assert(upgradeSource.includes("@media(min-width:1301px){.game-footer-hud{left:250px;right:360px;width:auto"));
