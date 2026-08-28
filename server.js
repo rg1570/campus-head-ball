@@ -30,6 +30,9 @@ const WIDE_GOAL_TOP = 325;
 const WORLD_WIDTH = 1720;
 const CENTER = WORLD_WIDTH / 2;
 const LEFT_LINE = 92;
+// Topun tamamı çizgiyi geçtiğinde ağın içinde kısa süre görünür; direkler
+// hâlâ aynı fiziksel konumda ve aynı çarpışma çözümüyle çalışır.
+const GOAL_LINE_CLEARANCE = 0;
 const RIGHT_LINE = WORLD_WIDTH - 92;
 const PLAYER_LEFT = 185;
 const PLAYER_RIGHT = WORLD_WIDTH - 185;
@@ -370,7 +373,10 @@ function updateBall(room){
   if(ball.y-ball.radius<CEILING){ball.y=CEILING+ball.radius;ball.vy=Math.abs(ball.vy)*stats.bounce;}
   if(ball.y-ball.radius<goalTop){if(ball.x-ball.radius<18){ball.x=18+ball.radius;ball.vx=Math.abs(ball.vx)*stats.bounce;}if(ball.x+ball.radius>width-18){ball.x=width-18-ball.radius;ball.vx=-Math.abs(ball.vx)*stats.bounce;}}
   const speed=Math.hypot(ball.vx,ball.vy);if(speed>stats.max){const scale=stats.max/speed;ball.vx*=scale;ball.vy*=scale;}
-  if(ball.x<LEFT_LINE-8&&ball.y>goalTop+5)scoreGoal(room,1);else if(ball.x>rightLine+8&&ball.y>goalTop+5)scoreGoal(room,0);
+  // Gol, topun tamamı direk düzlemini geçtiğinde verilir. Böylece istemci
+  // gol duraklamasında topu ağın gerçek içinde gösterebilir; üst direğe veya
+  // direğe değen toplar ise bu koşula ulaşmadan eski biçimde oyunda kalır.
+  if(ball.x+ball.radius<LEFT_LINE-GOAL_LINE_CLEARANCE&&ball.y>goalTop+5)scoreGoal(room,1);else if(ball.x-ball.radius>rightLine+GOAL_LINE_CLEARANCE&&ball.y>goalTop+5)scoreGoal(room,0);
 }
 function scoreGoal(room,side){if(room.phase!=="playing")return;room.score[side]++;room.phase="goalPause";room.pause=2.45;room.shake=.55;const scorer=room.ball.lastTouch;io.to(room.code).emit("goal",{side,scorer,score:room.score,x:room.ball.x,y:room.ball.y});if(room.score[side]>=room.rules.goalLimit)room.winner=side;}
 function finishMatch(room,winner){if(room.phase==="matchOver")return;room.phase="matchOver";room.winner=winner;room.pause=0;io.to(room.code).emit("matchEnded",{winner,score:room.score});emitLobby(room);}
@@ -387,4 +393,4 @@ function publicState(room){return{phase:room.phase,paused:!!room.userPaused,form
 
 function run(){let tick=0;setInterval(()=>{const tickStart=performance.now();tick++;const now=Date.now(),simulationStart=performance.now();let botAiMs=0;for(const [code,room] of rooms){if(room.emptySince&&now-room.emptySince>300000){rooms.delete(code);continue;}botAiMs+=update(room)||0;if(["intro","playing","goalPause","matchOver"].includes(room.phase)&&tick%3===0)io.to(room.code).emit("state",publicState(room));}telemetry.noteTick(performance.now()-tickStart,botAiMs,performance.now()-simulationStart);},1000/FPS);server.listen(PORT,HOST,()=>console.log(`Campus Head Ball 5.7.0 http://${HOST}:${PORT} adresinde hazır.`));}
 if(require.main===module)run();
-module.exports={BALLS,ROSTER,RULE_OPTIONS,AI_DIFFICULTIES,HITBOX,CROUCH_HITBOX,WORLD_WIDTH,ARENA_WIDTHS,STAGE_COUNT,GOAL_TOP,WIDE_GOAL_TOP,goalTopFor,LEFT_LINE,RIGHT_LINE,PLAYER_LEFT,PLAYER_RIGHT,activeSlots,nextKickoffX,createBall,createPlayer,aiInput,updatePlayer,updateBall,resolveTeamScrum,resolveBallPin,resolveCrowdStall,resolveLowPlayLoop,isTopShelfShot,collidePost,collideBallCircle,startAction,magnetBall};
+module.exports={BALLS,ROSTER,RULE_OPTIONS,AI_DIFFICULTIES,HITBOX,CROUCH_HITBOX,WORLD_WIDTH,ARENA_WIDTHS,STAGE_COUNT,GOAL_TOP,WIDE_GOAL_TOP,goalTopFor,LEFT_LINE,RIGHT_LINE,GOAL_LINE_CLEARANCE,PLAYER_LEFT,PLAYER_RIGHT,activeSlots,nextKickoffX,createBall,createPlayer,aiInput,updatePlayer,updateBall,resolveTeamScrum,resolveBallPin,resolveCrowdStall,resolveLowPlayLoop,isTopShelfShot,collidePost,collideBallCircle,startAction,magnetBall};
